@@ -164,3 +164,34 @@ body {
 
 .swipe-right-anim { animation: swipe-right 0.5s forwards ease-out; }
 .swipe-left-anim { animation: swipe-left 0.5s forwards ease-out; }
+
+/* Optimized Update Banner */
+.banner {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: var(--accent-gold);
+    color: #000;
+    padding: 10px 0;
+    text-align: center;
+    z-index: 9999; /* Ensure it's above everything */
+    font-weight: bold;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.banner.show {
+    display: block;
+}
+
+.banner button {
+    background: #000;
+    color: #fff;
+    border: none;
+    padding: 5px 15px;
+    margin-left: 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+}
