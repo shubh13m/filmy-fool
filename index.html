@@ -8,8 +8,12 @@
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
-    <div id="update-banner" class="banner">
-        New version available! <button onclick="handleUpdate()">Update Now</button>
+    <div id="update-banner" class="update-overlay hidden">
+        <div class="update-content">
+            <h2>FlixMix Updated</h2>
+            <p>A new version of the app is ready with the latest features.</p>
+            <button onclick="handleUpdate()" class="gold-btn">Update Now</button>
+        </div>
     </div>
 
     <div id="app">
