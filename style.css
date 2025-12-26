@@ -242,3 +242,20 @@ html, body {
     justify-content: space-between;
     border: 1px solid var(--border);
 }
+
+.update-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.95); /* Material Light blur */
+    backdrop-filter: blur(10px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.update-content {
+    padding: 40px;
+    max-width: 80%;
+}
