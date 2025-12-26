@@ -147,3 +147,22 @@ body {
     background: var(--accent-gold);
     color: #000;
 }
+
+/* Animation for swiping right (Like) */
+@keyframes swipe-right {
+    to {
+        transform: translate(150vw, -20vh) rotate(30deg);
+        opacity: 0;
+    }
+}
+
+/* Animation for swiping left (Dislike) */
+@keyframes swipe-left {
+    to {
+        transform: translate(-150vw, -20vh) rotate(-30deg);
+        opacity: 0;
+    }
+}
+
+.swipe-right-anim { animation: swipe-right 0.5s forwards; }
+.swipe-left-anim { animation: swipe-left 0.5s forwards; }
