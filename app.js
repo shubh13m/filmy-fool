@@ -12,8 +12,16 @@ let state = {
 
 // --- INITIALIZE APP ---
 window.addEventListener('load', () => {
+    // Setup Review Button
     const submitBtn = document.getElementById('submit-review');
     if (submitBtn) submitBtn.onclick = submitReview;
+
+    // Setup Toggle Buttons (Yes/No text swap)
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.innerText = this.classList.contains('active') ? "Yes" : "No";
+        });
+    });
 
     const today = new Date().toDateString();
     
@@ -43,9 +51,9 @@ async function startDailyDiscovery() {
 
         const detailed = await Promise.all(moviePromises);
 
-        // Filter and save
+        // Filter for high ratings and save
         state.dailyQueue = detailed
-            .filter(m => parseFloat(m.imdbRating) >= 7.0 && !state.history.includes(m.imdbID))
+            .filter(m => parseFloat(m.imdbRating) >= 7.0 && !state.history.some(h => h.id === m.imdbID))
             .slice(0, 5);
         
         state.queueDate = new Date().toDateString();
@@ -65,15 +73,14 @@ function renderStack() {
     container.innerHTML = '';
 
     if (state.dailyQueue.length === 0) {
-        container.innerHTML = '<div class="loading">Daily limit reached! Come back tomorrow.</div>';
+        container.innerHTML = '<div class="loading">Daily 5 complete! <br>Check back tomorrow for more.</div>';
         return;
     }
 
-    // We use a copy to render so that index 0 is at the bottom, last index on top
     state.dailyQueue.forEach((movie, index) => {
         const card = document.createElement('div');
         card.className = 'movie-card';
-        card.style.zIndex = index; // Last item has highest Z-index
+        card.style.zIndex = index; 
         
         const poster = movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/500x750?text=No+Poster";
 
@@ -89,7 +96,6 @@ function renderStack() {
             </div>
         `;
 
-        // Manual listeners to ensure correct movie reference
         card.querySelector('.cross-btn').onclick = () => handleSwipe(false);
         card.querySelector('.check-btn').onclick = () => handleSwipe(true);
         
@@ -106,7 +112,6 @@ function handleSwipe(isMatch) {
     topCard.classList.add(isMatch ? 'swipe-right-anim' : 'swipe-left-anim');
 
     topCard.addEventListener('animationend', () => {
-        // pop() gets the item that was visually on top
         const movie = state.dailyQueue.pop(); 
         localStorage.setItem('flixmix_queue', JSON.stringify(state.dailyQueue));
 
@@ -115,17 +120,10 @@ function handleSwipe(isMatch) {
             localStorage.setItem('flixmix_picked', JSON.stringify(movie));
             showReviewScreen();
         } else {
-            updateHistory(movie.imdbID);
-            renderStack(); // Just re-render what's left
+            updateHistory(movie.imdbID, null); // Log as skipped
+            renderStack();
         }
     }, { once: true });
-}
-
-function updateHistory(id) {
-    if (!state.history.includes(id)) {
-        state.history.push(id);
-        localStorage.setItem('flixmix_history', JSON.stringify(state.history));
-    }
 }
 
 function showReviewScreen() {
@@ -133,30 +131,55 @@ function showReviewScreen() {
     document.getElementById('review-view').classList.remove('hidden');
     document.getElementById('review-title').innerText = `How was ${state.pickedMovie.Title}?`;
     
-    // Reset star inputs for new review
+    // Reset UI for fresh review
     document.querySelectorAll('input[name="star"]').forEach(input => input.checked = false);
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.classList.remove('active');
+        btn.innerText = "No";
+    });
 }
 
 function submitReview() {
-    if (state.pickedMovie) {
-        updateHistory(state.pickedMovie.imdbID);
-        state.pickedMovie = null;
-        localStorage.removeItem('flixmix_picked');
-    }
+    // Capture Data
+    const rating = document.querySelector('input[name="star"]:checked')?.value || 0;
+    const isFamily = document.getElementById('btn-family').classList.contains('active');
+    const isRepeat = document.getElementById('btn-repeat').classList.contains('active');
 
+    const reviewData = {
+        id: state.pickedMovie.imdbID,
+        title: state.pickedMovie.Title,
+        userRating: rating,
+        familyFriendly: isFamily,
+        repeatWatch: isRepeat,
+        date: new Date().toLocaleDateString()
+    };
+
+    updateHistory(state.pickedMovie.imdbID, reviewData);
+    
+    // Clear Picked Movie
+    state.pickedMovie = null;
+    localStorage.removeItem('flixmix_picked');
+
+    // Return to Discovery
     document.getElementById('review-view').classList.add('hidden');
     document.getElementById('discovery-view').classList.remove('hidden');
     renderStack();
 }
 
-// --- PWA Logic ---
+function updateHistory(id, fullData) {
+    // Only add to history if not skipped (or if skipped, just the ID)
+    state.history.push(fullData || { id: id, skipped: true });
+    localStorage.setItem('flixmix_history', JSON.stringify(state.history));
+}
+
+// --- PWA LOGIC ---
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js');
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
 
 function handleUpdate() {
     navigator.serviceWorker.getRegistration().then(reg => {
-        if (reg.waiting) reg.waiting.postMessage({ action: 'skipWaiting' });
+        if (reg && reg.waiting) reg.waiting.postMessage({ action: 'skipWaiting' });
         window.location.reload();
     });
 }
