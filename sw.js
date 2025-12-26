@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flixmix-v4';
+const CACHE_NAME = 'flixmix-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -6,24 +6,35 @@ const ASSETS = [
   './app.js',
   './manifest.json'
 ];
-// Install: Cache core files
+
+// Install: Cache core UI assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
+  self.skipWaiting();
 });
 
-// Activate: Cleanup old caches
+// Activate: Clean up old versions
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
-      return Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)));
+      return Promise.all(
+        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+      );
     })
   );
 });
 
-// Fetch: Crucial for PWA Installability
+// Fetch: Smart caching
 self.addEventListener('fetch', (event) => {
+  // For API calls, try network first, don't cache
+  if (event.request.url.includes('omdbapi.com')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // For UI assets, use cache-first
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request);
@@ -31,9 +42,6 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Listen for the "Update Now" message
 self.addEventListener('message', (event) => {
-  if (event.data.action === 'skipWaiting') {
-    self.skipWaiting();
-  }
+  if (event.data.action === 'skipWaiting') self.skipWaiting();
 });
