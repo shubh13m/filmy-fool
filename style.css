@@ -24,6 +24,14 @@ body {
     flex-direction: column;
 }
 
+/* Ensure the "Fetching" text is centered and visible */
+.loading, .error {
+    text-align: center;
+    font-size: 1.2rem;
+    color: var(--accent-gold);
+    margin-top: 50px;
+}
+
 /* Card Stack Styling */
 #card-container {
     flex-grow: 1;
@@ -66,6 +74,19 @@ body {
     margin: 0;
 }
 
+/* Match the classes being generated in app.js */
+.movie-info h3 {
+    font-size: 1.4rem;
+    margin: 0 0 10px 0;
+    color: var(--accent-gold);
+}
+
+.movie-info p {
+    font-size: 0.9rem;
+    color: #ccc;
+    margin: 5px 0;
+}
+
 /* Review View Styling */
 .review-card {
     background: #161b2e;
@@ -101,3 +122,28 @@ body {
 }
 .banner.show { display: block; }
 .hidden { display: none !important; }
+
+/* Styling for the ✖ and ✔ buttons */
+.card-actions {
+    display: flex;
+    justify-content: space-around;
+    padding: 20px;
+    background: #161b2e;
+}
+
+.card-actions button {
+    background: #1e253d;
+    border: 2px solid var(--accent-gold);
+    color: var(--accent-gold);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.card-actions button:hover {
+    background: var(--accent-gold);
+    color: #000;
+}
