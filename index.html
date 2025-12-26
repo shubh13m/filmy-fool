@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FlixMix</title>
+    <meta name="theme-color" content="#0a0f1e"> <title>FlixMix</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
 </head>
@@ -15,25 +15,34 @@
     <div id="app">
         <section id="discovery-view">
             <div id="card-container">
-                <div class="loading">Fetching your Daily 5...</div>
+                <div class="loading">Preparing your mix...</div>
             </div>
         </section>
 
         <section id="review-view" class="hidden">
             <div class="review-card">
                 <h2 id="review-title">Rate your watch</h2>
-                <div class="stars">
+                
+                <div class="stars-rating">
                     <input type="radio" name="star" id="star5" value="5"><label for="star5">★</label>
                     <input type="radio" name="star" id="star4" value="4"><label for="star4">★</label>
                     <input type="radio" name="star" id="star3" value="3"><label for="star3">★</label>
                     <input type="radio" name="star" id="star2" value="2"><label for="star2">★</label>
                     <input type="radio" name="star" id="star1" value="1"><label for="star1">★</label>
                 </div>
+
                 <div class="questions">
-                    <p>Family Friendly? <button id="btn-family">No</button></p>
-                    <p>Repeatable? <button id="btn-repeat">No</button></p>
+                    <div class="toggle-row">
+                        <span>Family Friendly?</span>
+                        <button type="button" class="toggle-btn" id="btn-family" onclick="this.classList.toggle('active')">No</button>
+                    </div>
+                    <div class="toggle-row">
+                        <span>Watch Again?</span>
+                        <button type="button" class="toggle-btn" id="btn-repeat" onclick="this.classList.toggle('active')">No</button>
+                    </div>
                 </div>
-                <button id="submit-review" class="gold-btn">Submit to Portfolio</button>
+
+                <button id="submit-review" class="gold-btn">Save to History</button>
             </div>
         </section>
     </div>
