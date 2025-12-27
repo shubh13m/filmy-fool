@@ -90,7 +90,7 @@ html, body {
     position: absolute;
     width: 92%;
     max-width: 380px;
-    height: 75vh; /* FIXED HEIGHT */
+    height: 75vh;
     max-height: 580px;
     background: var(--surface);
     border-radius: 30px;
@@ -105,33 +105,32 @@ html, body {
 
 .movie-poster {
     width: 100%;
-    flex: 1; /* Poster grows to fill space */
+    flex: 1;
     min-height: 0; 
     object-fit: cover;
     background-color: #f1f3f4;
 }
 
-/* New: Groups Info and Actions at the bottom */
 .movie-footer {
-    flex-shrink: 0; /* Prevents this section from being squished */
+    flex-shrink: 0;
     padding: 18px 22px 24px 22px;
     background: var(--surface);
 }
 
 .movie-info h3 {
     margin: 0;
-    font-size: 1.25rem; /* Reduced size */
+    font-size: 1.25rem;
     font-weight: 700;
     color: var(--text-main);
     line-height: 1.2;
     display: -webkit-box;
-    -webkit-line-clamp: 2; /* Trims long names */
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
 
 .movie-info p {
-    margin: 6px 0 18px 0; /* Consistent gap between rating and buttons */
+    margin: 6px 0 18px 0;
     color: var(--text-dim);
     font-size: 0.95rem;
     font-weight: 500;
@@ -163,24 +162,96 @@ html, body {
 .card-actions .check-btn { color: #34a853; }
 .card-actions button:active { transform: scale(0.9); }
 
-/* --- REVIEW VIEW --- */
-#review-view { padding-top: 20px; overflow-y: auto; }
+/* --- REVIEW VIEW (Updated for Vertical Centering) --- */
+#review-view { 
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Vertical Center */
+    padding: 20px;
+    overflow-y: auto; 
+}
+
 .review-card {
     background: var(--surface);
-    padding: 25px;
-    border-radius: 28px;
-    margin: 0 20px 40px 20px;
+    padding: 30px 24px;
+    border-radius: 32px;
     text-align: center;
     box-shadow: var(--shadow);
     border: 1px solid var(--border);
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
 }
-.stars-rating { display: flex; flex-direction: row-reverse; justify-content: center; margin: 15px 0; }
-.stars-rating label { font-size: 2.4rem; color: #e8eaed; cursor: pointer; padding: 0 4px; }
-.stars-rating input:checked ~ label, .stars-rating label:hover, .stars-rating label:hover ~ label { color: #fbbc04; }
-.toggle-row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; }
-.toggle-btn { background: #f1f3f4; color: var(--text-main); border: 1px solid var(--border); padding: 10px 20px; border-radius: 12px; min-width: 80px; font-weight: 600; }
-.toggle-btn.active { background: var(--primary); color: white; }
-.gold-btn { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 14px; font-weight: 700; width: 100%; margin-top: 10px; }
+
+/* --- STAR RATING (Fix: No Bullets) --- */
+.stars-rating { 
+    display: flex; 
+    flex-direction: row-reverse; 
+    justify-content: center; 
+    margin: 20px 0; 
+}
+
+/* Hide the radio circles */
+.stars-rating input { display: none; }
+
+.stars-rating label { 
+    font-size: 2.8rem; 
+    color: #e8eaed; 
+    cursor: pointer; 
+    padding: 0 4px; 
+    transition: color 0.2s;
+}
+
+.stars-rating input:checked ~ label, 
+.stars-rating label:hover, 
+.stars-rating label:hover ~ label { 
+    color: #fbbc04; 
+}
+
+/* --- TOGGLES (Yes/No Style) --- */
+.toggle-row { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin: 18px 0; 
+}
+
+.toggle-row span {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.toggle-btn { 
+    background: #f1f3f4; 
+    color: var(--text-main); 
+    border: 2px solid transparent; 
+    padding: 10px 0; 
+    border-radius: 12px; 
+    width: 80px; 
+    font-weight: 700; 
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.toggle-btn.active { 
+    background: var(--primary); 
+    color: white; 
+    box-shadow: 0 4px 12px rgba(98, 0, 238, 0.2);
+}
+
+.gold-btn { 
+    background: var(--primary); 
+    color: white; 
+    border: none; 
+    padding: 18px; 
+    border-radius: 16px; 
+    font-weight: 700; 
+    font-size: 1.1rem;
+    width: 100%; 
+    margin-top: 15px; 
+    cursor: pointer;
+}
 
 /* --- UTILS & ANIMATIONS --- */
 .hidden { display: none !important; }
@@ -189,10 +260,10 @@ html, body {
 .swipe-right-anim { animation: swipe-right 0.4s forwards ease-in; }
 .swipe-left-anim { animation: swipe-left 0.4s forwards ease-in; }
 
-/* --- HISTORY & UPDATE OVERLAYS --- */
+/* --- HISTORY & OVERLAYS --- */
 #history-view { position: fixed; inset: 0; background: var(--background); z-index: 1000; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
 .history-item { background: var(--surface); margin-bottom: 12px; padding: 15px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); }
 .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .history-header h2 { margin: 0; font-weight: 800; color: var(--primary); }
-.history-header button { background: none; border: none; font-size: 1.5rem; color: var(--text-dim); }
+.history-header button { background: none; border: none; font-size: 1.5rem; color: var(--text-dim); cursor: pointer; }
 .update-overlay { position: fixed; inset: 0; background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); z-index: 9999; display: flex; align-items: center; justify-content: center; text-align: center; }
