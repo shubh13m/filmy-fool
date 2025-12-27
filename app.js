@@ -15,18 +15,12 @@ window.addEventListener('load', () => {
     const submitBtn = document.getElementById('submit-review');
     if (submitBtn) submitBtn.onclick = submitReview;
 
-    // Correct Toggle Logic for Yes/No buttons
-    document.querySelectorAll('.toggle-btn').forEach(btn => {
-        btn.onclick = function() {
-            this.classList.toggle('active');
-            // If it has 'active' class, it's a "Yes", otherwise "No"
-            this.innerText = this.classList.contains('active') ? "Yes" : "No";
-        };
-    });
-
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-        window.location.reload();
-    });
+    // Service Worker Logic
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            window.location.reload();
+        });
+    }
 
     const today = new Date().toDateString();
     
@@ -163,11 +157,11 @@ function showReviewScreen() {
     // Clear Star Selections
     document.querySelectorAll('input[name="star"]').forEach(input => input.checked = false);
     
-    // Reset Toggles to "No" state on load
-    document.querySelectorAll('.toggle-btn').forEach(btn => {
-        btn.classList.remove('active');
-        btn.innerText = "No";
-    });
+    // RESET NEW SWITCHES: Uncheck them for the next movie
+    const familySwitch = document.getElementById('btn-family');
+    const repeatSwitch = document.getElementById('btn-repeat');
+    if (familySwitch) familySwitch.checked = false;
+    if (repeatSwitch) repeatSwitch.checked = false;
 }
 
 function submitReview() {
@@ -178,9 +172,9 @@ function submitReview() {
         id: state.pickedMovie.imdbID,
         title: state.pickedMovie.Title,
         userRating: parseInt(ratingInput.value),
-        // Capture "Yes" state via the 'active' class
-        familyFriendly: document.getElementById('btn-family').classList.contains('active'),
-        repeatWatch: document.getElementById('btn-repeat').classList.contains('active'),
+        // Capture "Yes/No" state via the checkbox .checked property
+        familyFriendly: document.getElementById('btn-family').checked,
+        repeatWatch: document.getElementById('btn-repeat').checked,
         date: new Date().toLocaleDateString()
     };
 
