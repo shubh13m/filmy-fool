@@ -15,9 +15,11 @@ window.addEventListener('load', () => {
     const submitBtn = document.getElementById('submit-review');
     if (submitBtn) submitBtn.onclick = submitReview;
 
+    // Correct Toggle Logic for Yes/No buttons
     document.querySelectorAll('.toggle-btn').forEach(btn => {
         btn.onclick = function() {
             this.classList.toggle('active');
+            // If it has 'active' class, it's a "Yes", otherwise "No"
             this.innerText = this.classList.contains('active') ? "Yes" : "No";
         };
     });
@@ -110,7 +112,6 @@ function renderStack() {
         
         const poster = movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/500x750?text=No+Poster";
 
-        // UPDATED: Added movie-footer wrapper to fix button overflow
         card.innerHTML = `
             <img src="${poster}" alt="${movie.Title}" class="movie-poster">
             <div class="movie-footer">
@@ -151,12 +152,18 @@ function handleSwipe(isMatch) {
     }, { once: true });
 }
 
+// --- UPDATED REVIEW SCREEN LOGIC ---
 function showReviewScreen() {
     document.getElementById('discovery-view').classList.add('hidden');
     document.getElementById('review-view').classList.remove('hidden');
+    
+    // Set the question text
     document.getElementById('review-title').innerText = `How was ${state.pickedMovie.Title}?`;
     
+    // Clear Star Selections
     document.querySelectorAll('input[name="star"]').forEach(input => input.checked = false);
+    
+    // Reset Toggles to "No" state on load
     document.querySelectorAll('.toggle-btn').forEach(btn => {
         btn.classList.remove('active');
         btn.innerText = "No";
@@ -171,6 +178,7 @@ function submitReview() {
         id: state.pickedMovie.imdbID,
         title: state.pickedMovie.Title,
         userRating: parseInt(ratingInput.value),
+        // Capture "Yes" state via the 'active' class
         familyFriendly: document.getElementById('btn-family').classList.contains('active'),
         repeatWatch: document.getElementById('btn-repeat').classList.contains('active'),
         date: new Date().toLocaleDateString()
