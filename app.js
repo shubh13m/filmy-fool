@@ -124,7 +124,6 @@ function renderStack() {
     state.dailyQueue.forEach((movie, index) => {
         const card = document.createElement('div');
         card.className = 'movie-card';
-        // zIndex ensures the last item in array is visually on top
         card.style.zIndex = index; 
         
         const poster = movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/500x750?text=No+Poster";
@@ -205,7 +204,6 @@ function submitReview() {
 }
 
 function updateHistory(id, data) {
-    // Remove old versions of this movie from history
     state.history = state.history.filter(h => h.id !== id);
     state.history.push(data);
     localStorage.setItem('flixmix_history', JSON.stringify(state.history));
@@ -235,12 +233,21 @@ function renderHistory() {
     [...ratedMovies].reverse().forEach(item => {
         const div = document.createElement('div');
         div.className = 'history-item';
+
+        // Check for specific switches and create labels/tags
+        const familyTag = item.familyFriendly ? '<span class="tag">👨‍👩‍👧 Family</span>' : '';
+        const watchAgainTag = item.repeatWatch ? '<span class="tag">🔁 Re-watch</span>' : '';
+
         div.innerHTML = `
             <div class="history-info">
                 <h4>${item.title}</h4>
-                <p>${item.date} ${item.familyFriendly ? '• 👨‍👩‍👧' : ''}</p>
+                <p>${item.date}</p>
+                <div class="history-tags" style="display:flex; gap:5px; margin-top:5px;">
+                    ${familyTag}
+                    ${watchAgainTag}
+                </div>
             </div>
-            <div class="history-badge">${'★'.repeat(item.userRating)}</div>
+            <div class="history-badge" style="font-weight:bold; color:var(--primary);">${'★'.repeat(item.userRating)}</div>
         `;
         list.appendChild(div);
     });
