@@ -162,12 +162,12 @@ html, body {
 .card-actions .check-btn { color: #34a853; }
 .card-actions button:active { transform: scale(0.9); }
 
-/* --- REVIEW VIEW (Updated for Vertical Centering) --- */
+/* --- REVIEW VIEW (Vertical Centering) --- */
 #review-view { 
     height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center; /* Vertical Center */
+    justify-content: center;
     padding: 20px;
     overflow-y: auto; 
 }
@@ -184,7 +184,7 @@ html, body {
     margin: 0 auto;
 }
 
-/* --- STAR RATING (Fix: No Bullets) --- */
+/* --- STAR RATING --- */
 .stars-rating { 
     display: flex; 
     flex-direction: row-reverse; 
@@ -192,7 +192,6 @@ html, body {
     margin: 20px 0; 
 }
 
-/* Hide the radio circles */
 .stars-rating input { display: none; }
 
 .stars-rating label { 
@@ -209,35 +208,64 @@ html, body {
     color: #fbbc04; 
 }
 
-/* --- TOGGLES (Yes/No Style) --- */
+/* --- SLIDING SWITCH DESIGN --- */
 .toggle-row { 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    margin: 18px 0; 
+    margin: 22px 0; 
 }
 
 .toggle-row span {
     font-weight: 600;
     color: var(--text-main);
+    font-size: 1rem;
 }
 
-.toggle-btn { 
-    background: #f1f3f4; 
-    color: var(--text-main); 
-    border: 2px solid transparent; 
-    padding: 10px 0; 
-    border-radius: 12px; 
-    width: 80px; 
-    font-weight: 700; 
-    cursor: pointer;
-    transition: all 0.2s;
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
 }
 
-.toggle-btn.active { 
-    background: var(--primary); 
-    color: white; 
-    box-shadow: 0 4px 12px rgba(98, 0, 238, 0.2);
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #e0e0e0;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+input:checked + .slider {
+  background-color: var(--primary);
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px);
 }
 
 .gold-btn { 
@@ -251,6 +279,7 @@ html, body {
     width: 100%; 
     margin-top: 15px; 
     cursor: pointer;
+    box-shadow: 0 4px 15px rgba(98, 0, 238, 0.2);
 }
 
 /* --- UTILS & ANIMATIONS --- */
