@@ -42,15 +42,11 @@ async function startDailyDiscovery() {
     const container = document.getElementById('card-container');
     container.innerHTML = '<div class="loading">Curating your mix...</div>';
     
-    // Keywords likely to return high-rated content
     const masterKeywords = ["Masterpiece", "Classic", "Oscar", "Noir", "Detective", "Future", "Secret", "Legend", "Mystery", "Empire"];
-    // Shuffle the keywords so every reload starts differently
     const shuffledKeywords = masterKeywords.sort(() => Math.random() - 0.5);
-    
     let foundMovies = [];
 
     try {
-        // Loop through keywords until we have 5 movies
         for (const query of shuffledKeywords) {
             if (foundMovies.length >= 5) break;
 
@@ -58,7 +54,6 @@ async function startDailyDiscovery() {
             const data = await res.json();
             
             if (data.Response === "True") {
-                // Fetch details for first 8 results to check ratings
                 const moviePromises = data.Search.slice(0, 8).map(m => 
                     fetch(`${BASE_URL}?i=${m.imdbID}&apikey=${OMDB_API_KEY}`).then(r => r.json())
                 );
@@ -68,11 +63,9 @@ async function startDailyDiscovery() {
                 const filtered = detailed.filter(m => {
                     const rating = parseFloat(m.imdbRating);
                     const isNew = !state.history.some(h => h.id === m.imdbID);
-                    // STRICT FILTER: Must be 7.0+ and not seen before
                     return !isNaN(rating) && rating >= 7.0 && isNew;
                 });
 
-                // Add to our main list, ensuring no duplicates within the same batch
                 filtered.forEach(m => {
                     if (foundMovies.length < 5 && !foundMovies.some(existing => existing.imdbID === m.imdbID)) {
                         foundMovies.push(m);
@@ -81,9 +74,7 @@ async function startDailyDiscovery() {
             }
         }
 
-        if (foundMovies.length === 0) {
-            throw new Error("No high-rated movies found.");
-        }
+        if (foundMovies.length === 0) throw new Error("No high-rated movies found.");
 
         state.dailyQueue = foundMovies;
         state.queueDate = new Date().toDateString();
@@ -119,15 +110,18 @@ function renderStack() {
         
         const poster = movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/500x750?text=No+Poster";
 
+        // UPDATED: Added movie-footer wrapper to fix button overflow
         card.innerHTML = `
             <img src="${poster}" alt="${movie.Title}" class="movie-poster">
-            <div class="movie-info">
-                <h3>${movie.Title}</h3>
-                <p>⭐ ${movie.imdbRating} | ${movie.Genre}</p>
-            </div>
-            <div class="card-actions">
-                <button class="cross-btn" onclick="handleSwipe(false)">✖</button>
-                <button class="check-btn" onclick="handleSwipe(true)">✔</button>
+            <div class="movie-footer">
+                <div class="movie-info">
+                    <h3>${movie.Title}</h3>
+                    <p>⭐ ${movie.imdbRating} | ${movie.Genre}</p>
+                </div>
+                <div class="card-actions">
+                    <button class="cross-btn" onclick="handleSwipe(false)">✖</button>
+                    <button class="check-btn" onclick="handleSwipe(true)">✔</button>
+                </div>
             </div>
         `;
         container.appendChild(card);
@@ -155,17 +149,6 @@ function handleSwipe(isMatch) {
             renderStack(); 
         }
     }, { once: true });
-}
-
-// --- PWA / UPDATE LOGIC ---
-function handleUpdate() {
-    navigator.serviceWorker.getRegistration().then(reg => {
-        if (reg && reg.waiting) {
-            reg.waiting.postMessage({ action: 'skipWaiting' });
-        } else {
-            window.location.reload();
-        }
-    });
 }
 
 function showReviewScreen() {
