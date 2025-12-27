@@ -31,7 +31,19 @@ window.addEventListener('load', () => {
     } else {
         startDailyDiscovery();
     }
+    if (state.pickedMovie || (state.dailyQueue.length > 0 && state.queueDate === today)) {
+        // If we don't need to fetch, hide splash immediately
+        hideSplash();
+    }
 });
+
+// Helper function
+function hideSplash() {
+    const splash = document.getElementById('splash-screen');
+    if (splash) {
+        splash.classList.add('splash-fade-out');
+    }
+}
 
 // --- FETCHING LOGIC ---
 async function startDailyDiscovery() {
@@ -78,9 +90,12 @@ async function startDailyDiscovery() {
         localStorage.setItem('flixmix_date', state.queueDate);
 
         renderStack();
+        // NEW: Hide splash screen after fetching
+        hideSplash();
 
     } catch (err) {
         console.error(err);
+        hideSplash(); // Added this to ensure splash disappears even on error
         container.innerHTML = `
             <div class="error">
                 <p>No new 7.0+ movies found.</p>
