@@ -47,12 +47,39 @@ html, body {
     z-index: 100;
 }
 
+/* --- ENHANCED LOGO STYLE --- */
 .logo {
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: var(--primary);
-    margin: 0;
-    letter-spacing: -0.8px;
+    font-size: 1.6rem;
+    font-weight: 900;
+    letter-spacing: -1.2px;
+    display: flex;
+    align-items: center;
+    gap: 2px; /* Tight spacing for a modern look */
+    cursor: default;
+    user-select: none;
+}
+
+/* Styles the "Flix" part */
+.logo span:first-child {
+    color: var(--text-main);
+}
+
+/* Styles the "Mix" part with a vibrant gradient */
+.logo span:last-child {
+    background: linear-gradient(135deg, var(--primary), #a277ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Adds the accent dot at the end */
+.logo::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background-color: var(--secondary);
+    border-radius: 50%;
+    margin-left: 1px;
+    margin-top: 8px; /* Aligns dot near the baseline */
 }
 
 #view-history-btn {
