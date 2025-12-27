@@ -22,9 +22,8 @@ window.addEventListener('load', () => {
         };
     });
 
-    // LISTEN FOR SERVICE WORKER UPDATES
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-        window.location.reload(); // This ensures the app reloads when the new SW takes over
+        window.location.reload();
     });
 
     const today = new Date().toDateString();
@@ -43,37 +42,63 @@ async function startDailyDiscovery() {
     const container = document.getElementById('card-container');
     container.innerHTML = '<div class="loading">Curating your mix...</div>';
     
-    const keywords = ["Man", "Love", "Space", "Dark", "World", "Time", "Life", "Action", "Night", "Story"];
-    const query = keywords[Math.floor(Math.random() * keywords.length)];
+    // Keywords likely to return high-rated content
+    const masterKeywords = ["Masterpiece", "Classic", "Oscar", "Noir", "Detective", "Future", "Secret", "Legend", "Mystery", "Empire"];
+    // Shuffle the keywords so every reload starts differently
+    const shuffledKeywords = masterKeywords.sort(() => Math.random() - 0.5);
+    
+    let foundMovies = [];
 
     try {
-        const res = await fetch(`${BASE_URL}?s=${query}&type=movie&apikey=${OMDB_API_KEY}`);
-        const data = await res.json();
-        if (data.Response === "False") throw new Error(data.Error);
+        // Loop through keywords until we have 5 movies
+        for (const query of shuffledKeywords) {
+            if (foundMovies.length >= 5) break;
 
-        const moviePromises = data.Search.slice(0, 10).map(m => 
-            fetch(`${BASE_URL}?i=${m.imdbID}&apikey=${OMDB_API_KEY}`).then(r => r.json())
-        );
+            const res = await fetch(`${BASE_URL}?s=${query}&type=movie&apikey=${OMDB_API_KEY}`);
+            const data = await res.json();
+            
+            if (data.Response === "True") {
+                // Fetch details for first 8 results to check ratings
+                const moviePromises = data.Search.slice(0, 8).map(m => 
+                    fetch(`${BASE_URL}?i=${m.imdbID}&apikey=${OMDB_API_KEY}`).then(r => r.json())
+                );
 
-        const detailed = await Promise.all(moviePromises);
+                const detailed = await Promise.all(moviePromises);
 
-        state.dailyQueue = detailed
-            .filter(m => {
-                const rating = parseFloat(m.imdbRating);
-                const isNew = !state.history.some(h => h.id === m.imdbID);
-                return !isNaN(rating) && rating >= 7.0 && isNew;
-            })
-            .slice(0, 5);
-        
-        if (state.dailyQueue.length === 0) state.dailyQueue = detailed.slice(0, 5);
-        
+                const filtered = detailed.filter(m => {
+                    const rating = parseFloat(m.imdbRating);
+                    const isNew = !state.history.some(h => h.id === m.imdbID);
+                    // STRICT FILTER: Must be 7.0+ and not seen before
+                    return !isNaN(rating) && rating >= 7.0 && isNew;
+                });
+
+                // Add to our main list, ensuring no duplicates within the same batch
+                filtered.forEach(m => {
+                    if (foundMovies.length < 5 && !foundMovies.some(existing => existing.imdbID === m.imdbID)) {
+                        foundMovies.push(m);
+                    }
+                });
+            }
+        }
+
+        if (foundMovies.length === 0) {
+            throw new Error("No high-rated movies found.");
+        }
+
+        state.dailyQueue = foundMovies;
         state.queueDate = new Date().toDateString();
         localStorage.setItem('flixmix_queue', JSON.stringify(state.dailyQueue));
         localStorage.setItem('flixmix_date', state.queueDate);
 
         renderStack();
+
     } catch (err) {
-        container.innerHTML = `<div class="error"><p>Error loading movies</p></div>`;
+        console.error(err);
+        container.innerHTML = `
+            <div class="error">
+                <p>No new 7.0+ movies found.</p>
+                <button onclick="localStorage.clear(); location.reload();" class="gold-btn" style="width:auto; padding:10px 20px;">Reset History</button>
+            </div>`;
     }
 }
 
@@ -87,11 +112,10 @@ function renderStack() {
         return;
     }
 
-    // We render the queue. The last item in the array will be the "top" card.
     state.dailyQueue.forEach((movie, index) => {
         const card = document.createElement('div');
         card.className = 'movie-card';
-        card.style.zIndex = index; // Higher index = on top
+        card.style.zIndex = index; 
         
         const poster = movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/500x750?text=No+Poster";
 
@@ -115,12 +139,10 @@ function handleSwipe(isMatch) {
     const cards = document.querySelectorAll('.movie-card');
     if (cards.length === 0) return;
 
-    // The visually "top" card is the one with the highest z-index (the last one in DOM)
     const topCard = cards[cards.length - 1];
     topCard.classList.add(isMatch ? 'swipe-right-anim' : 'swipe-left-anim');
 
     topCard.addEventListener('animationend', () => {
-        // ALWAYS remove the last item from state to match the top card
         const movie = state.dailyQueue.pop(); 
         localStorage.setItem('flixmix_queue', JSON.stringify(state.dailyQueue));
 
@@ -129,8 +151,8 @@ function handleSwipe(isMatch) {
             localStorage.setItem('flixmix_picked', JSON.stringify(movie));
             showReviewScreen();
         } else {
-            updateHistory(movie.imdbID, { id: movie.imdbID, title: movie.Title, skipped: true });
-            renderStack(); // Redraw remaining cards
+            updateHistory(movie.imdbID, { id: movie.imdbID, title: movie.Title, skipped: true, date: new Date().toLocaleDateString() });
+            renderStack(); 
         }
     }, { once: true });
 }
@@ -140,7 +162,6 @@ function handleUpdate() {
     navigator.serviceWorker.getRegistration().then(reg => {
         if (reg && reg.waiting) {
             reg.waiting.postMessage({ action: 'skipWaiting' });
-            // The controllerchange listener at the top will handle the reload
         } else {
             window.location.reload();
         }
