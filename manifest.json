@@ -1,6 +1,6 @@
 {
-  "name": "FlixMix: Daily Movie Discovery",
-  "short_name": "FlixMix",
+  "name": "FilmyFool: Daily Movie Discovery",
+  "short_name": "FilmyFool",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#0a0f1e",
