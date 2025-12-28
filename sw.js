@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flixmix-v28'; // Updated version
+const CACHE_NAME = 'flixmix-v29'; // Updated version
 const ASSETS = [
   './',
   './index.html',
