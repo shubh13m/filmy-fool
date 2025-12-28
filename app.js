@@ -10,30 +10,39 @@ let state = {
     pickedMovie: JSON.parse(localStorage.getItem('flixmix_picked')) || null
 };
 
+// Global timer variable to allow cancellation
+let splashTimer;
+
 // --- INITIALIZE APP ---
 window.addEventListener('load', () => {
     const submitBtn = document.getElementById('submit-review');
     if (submitBtn) submitBtn.onclick = submitReview;
 
-    setTimeout(hideSplash, 6000);
+    // Start splash timer, but store it in a variable
+    splashTimer = setTimeout(hideSplash, 6000);
 
-    // --- SERVICE WORKER REGISTRATION & UPDATE DETECTION ---
+    // --- SERVICE WORKER REGISTRATION ---
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').then(reg => {
-            // Check for updates on load
             reg.onupdatefound = () => {
                 const installingWorker = reg.installing;
                 installingWorker.onstatechange = () => {
                     if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        // A new version is waiting! Show the banner.
+                        // NEW VERSION DETECTED:
+                        // 1. Clear the timer so the splash screen doesn't hide the banner
+                        clearTimeout(splashTimer);
+                        
+                        // 2. Show the banner
                         const banner = document.getElementById('update-banner');
-                        if (banner) banner.classList.remove('hidden');
+                        if (banner) {
+                            banner.classList.remove('hidden');
+                            banner.style.display = 'flex'; // Force visibility
+                        }
                     }
                 };
             };
         });
 
-        // This triggers when the new Service Worker successfully takes over
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             window.location.reload();
         });
@@ -55,13 +64,21 @@ window.addEventListener('load', () => {
 // --- HELPER FUNCTIONS ---
 function hideSplash() {
     const splash = document.getElementById('splash-screen');
+    const banner = document.getElementById('update-banner');
+    
+    // IF the update banner is visible, DO NOT hide the splash yet 
+    // or the banner might flicker away
+    if (banner && !banner.classList.contains('hidden')) {
+        return; 
+    }
+
     if (splash && !splash.classList.contains('splash-fade-out')) {
         splash.classList.add('splash-fade-out');
     }
 }
 
-// Fixed Update Handler: Talks to Service Worker instead of just refreshing
-function handleUpdate() {
+// Fixed Update Handler
+window.handleUpdate = function() {
     navigator.serviceWorker.getRegistration().then(reg => {
         if (reg && reg.waiting) {
             reg.waiting.postMessage({ action: 'skipWaiting' });
@@ -69,20 +86,23 @@ function handleUpdate() {
             window.location.reload(true);
         }
     });
-}
+};
 
-// --- OPTIMIZED FETCHING LOGIC ---
+// --- FETCHING LOGIC ---
 async function startDailyDiscovery() {
     const container = document.getElementById('card-container');
     container.innerHTML = '<div class="loading">Curating your mix...</div>';
     
-    const masterKeywords = ["Masterpiece", "Classic", "Oscar", "Noir", "Detective", "Future", "Secret", "Legend", "Mystery", "Empire"];
-    const shuffledKeywords = masterKeywords.sort(() => Math.random() - 0.5).slice(0, 5);
+    const masterKeywords = ["Masterpiece", "Classic", "Noir", "Mystery", "Empire"];
+    const shuffledKeywords = masterKeywords.sort(() => Math.random() - 0.5).slice(0, 3);
     let foundMovies = [];
 
     try {
         const searchPromises = shuffledKeywords.map(query => 
-            fetch(`${BASE_URL}?s=${query}&type=movie&apikey=${OMDB_API_KEY}`).then(r => r.json())
+            fetch(`${BASE_URL}?s=${query}&type=movie&apikey=${OMDB_API_KEY}`).then(r => {
+                if (r.status === 401) throw new Error("UNAUTHORIZED");
+                return r.json();
+            })
         );
         
         const results = await Promise.all(searchPromises);
@@ -96,7 +116,7 @@ async function startDailyDiscovery() {
 
         const uniqueIDs = [...new Set(allPotentialIDs)].filter(id => !state.history.some(h => h.id === id));
 
-        const detailPromises = uniqueIDs.slice(0, 10).map(id => 
+        const detailPromises = uniqueIDs.slice(0, 8).map(id => 
             fetch(`${BASE_URL}?i=${id}&apikey=${OMDB_API_KEY}`).then(r => r.json())
         );
 
@@ -107,7 +127,7 @@ async function startDailyDiscovery() {
             return !isNaN(rating) && rating >= 7.0;
         }).slice(0, 5);
 
-        if (foundMovies.length === 0) throw new Error("No high-rated movies found.");
+        if (foundMovies.length === 0) throw new Error("EMPTY");
 
         state.dailyQueue = foundMovies;
         state.queueDate = new Date().toDateString();
@@ -120,9 +140,15 @@ async function startDailyDiscovery() {
     } catch (err) {
         console.error("Discovery Error:", err);
         hideSplash();
+        
+        let errorMsg = "Connection slow or no new movies found.";
+        if (err.message === "UNAUTHORIZED") {
+            errorMsg = "API Key error. Check activation email.";
+        }
+
         container.innerHTML = `
             <div class="error">
-                <p>Connection slow or no new movies found.</p>
+                <p>${errorMsg}</p>
                 <button onclick="location.reload();" class="gold-btn" style="width:auto; padding:10px 20px;">Try Again</button>
             </div>`;
     }
@@ -131,6 +157,7 @@ async function startDailyDiscovery() {
 // --- UI RENDERING ---
 function renderStack() {
     const container = document.getElementById('card-container');
+    if (!container) return;
     container.innerHTML = '';
 
     if (state.dailyQueue.length === 0) {
@@ -141,7 +168,6 @@ function renderStack() {
     state.dailyQueue.forEach((movie, index) => {
         const card = document.createElement('div');
         card.className = 'movie-card';
-        // Correct z-index for visual stacking
         card.style.zIndex = index; 
         
         const poster = movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/500x750?text=No+Poster";
@@ -163,7 +189,6 @@ function renderStack() {
     });
 }
 
-// --- INTERACTION LOGIC ---
 function handleSwipe(isMatch) {
     const cards = document.querySelectorAll('.movie-card');
     if (cards.length === 0) return;
@@ -186,14 +211,11 @@ function handleSwipe(isMatch) {
     }, { once: true });
 }
 
-// --- REVIEW SCREEN LOGIC ---
 function showReviewScreen() {
     document.getElementById('discovery-view').classList.add('hidden');
     document.getElementById('review-view').classList.remove('hidden');
-    
     document.getElementById('review-title').innerText = `How was ${state.pickedMovie.Title}?`;
     
-    // Reset inputs
     document.querySelectorAll('input[name="star"]').forEach(input => input.checked = false);
     document.getElementById('btn-family').checked = false;
     document.getElementById('btn-repeat').checked = false;
@@ -237,32 +259,25 @@ function toggleHistory(show) {
     }
 }
 
-// Fixed History Rendering with Tags
 function renderHistory() {
     const list = document.getElementById('history-list');
     list.innerHTML = '';
-    
     const ratedMovies = state.history.filter(h => h.userRating !== undefined);
-    
     if (ratedMovies.length === 0) {
         list.innerHTML = '<p style="text-align:center; color:#999; margin-top:40px;">No reviews yet.</p>';
         return;
     }
-
     [...ratedMovies].reverse().forEach(item => {
         const div = document.createElement('div');
         div.className = 'history-item';
-
         const familyTag = item.familyFriendly ? '<span class="tag">👨‍👩‍👧 Family</span>' : '';
         const watchAgainTag = item.repeatWatch ? '<span class="tag">🔁 Re-watch</span>' : '';
-
         div.innerHTML = `
             <div class="history-info">
                 <h4>${item.title}</h4>
                 <p>${item.date}</p>
                 <div class="history-tags" style="display:flex; gap:5px; margin-top:5px;">
-                    ${familyTag}
-                    ${watchAgainTag}
+                    ${familyTag}${watchAgainTag}
                 </div>
             </div>
             <div class="history-badge" style="font-weight:bold; color:var(--primary);">${'★'.repeat(item.userRating)}</div>
