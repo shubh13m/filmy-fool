@@ -131,8 +131,8 @@ async function startDailyDiscovery() {
 
         state.dailyQueue = foundMovies;
         state.queueDate = new Date().toDateString();
-        localStorage.setItem('flixmix_queue', JSON.stringify(state.dailyQueue));
-        localStorage.setItem('flixmix_date', state.queueDate);
+        localStorage.setItem('filmyfool_queue', JSON.stringify(state.dailyQueue));
+        localStorage.setItem('filmyfool_date', state.queueDate);
 
         renderStack();
         hideSplash();
@@ -198,11 +198,11 @@ function handleSwipe(isMatch) {
 
     topCard.addEventListener('animationend', () => {
         const movie = state.dailyQueue.pop(); 
-        localStorage.setItem('flixmix_queue', JSON.stringify(state.dailyQueue));
+        localStorage.setItem('filmyfool_queue', JSON.stringify(state.dailyQueue));
 
         if (isMatch) {
             state.pickedMovie = movie;
-            localStorage.setItem('flixmix_picked', JSON.stringify(movie));
+            localStorage.setItem('filmyfool_picked', JSON.stringify(movie));
             showReviewScreen();
         } else {
             updateHistory(movie.imdbID, { id: movie.imdbID, title: movie.Title, skipped: true, date: new Date().toLocaleDateString() });
@@ -236,7 +236,7 @@ function submitReview() {
 
     updateHistory(state.pickedMovie.imdbID, reviewData);
     state.pickedMovie = null;
-    localStorage.removeItem('flixmix_picked');
+    localStorage.removeItem('filmyfool_picked');
 
     document.getElementById('review-view').classList.add('hidden');
     document.getElementById('discovery-view').classList.remove('hidden');
@@ -246,7 +246,7 @@ function submitReview() {
 function updateHistory(id, data) {
     state.history = state.history.filter(h => h.id !== id);
     state.history.push(data);
-    localStorage.setItem('flixmix_history', JSON.stringify(state.history));
+    localStorage.setItem('filmyfool_history', JSON.stringify(state.history));
 }
 
 function toggleHistory(show) {
