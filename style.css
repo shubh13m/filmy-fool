@@ -59,12 +59,12 @@ html, body {
     user-select: none;
 }
 
-/* Styles the "Flix" part */
+/* Styles the "Filmy" part */
 .logo span:first-child {
     color: var(--text-main);
 }
 
-/* Styles the "Mix" part with a vibrant gradient */
+/* Styles the "Fool" part with a vibrant gradient */
 .logo span:last-child {
     background: linear-gradient(135deg, var(--primary), #a277ff);
     -webkit-background-clip: text;
