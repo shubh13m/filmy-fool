@@ -25,17 +25,24 @@
                 <h2>Your Watch History</h2>
                 <button onclick="toggleHistory(false)">✕</button>
             </div>
-            <div id="history-list">
-                </div>
+            <div id="history-list"></div>
         </section>
         
         <section id="discovery-view">
             <header class="app-header">
                 <h1 class="logo"><span>Filmy</span><span>Fool</span></h1>
-                <button id="view-history-btn" onclick="toggleHistory(true)" aria-label="View History">
-                    <span class="icon">📜</span>
-                </button>
+                
+                <div class="nav-controls">
+                    <button id="update-btn" onclick="handleUpdateClick()" title="App is up to date" aria-label="Update App">
+                        <span class="icon">✨</span>
+                    </button>
+
+                    <button id="view-history-btn" onclick="toggleHistory(true)" aria-label="View History">
+                        <span class="icon">📜</span>
+                    </button>
+                </div>
             </header>
+
             <div id="card-container">
                 <div class="loading">Preparing your mix...</div>
             </div>
