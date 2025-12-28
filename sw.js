@@ -39,23 +39,19 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
 
-  // API Calls: Always go to the network
+  // 1. API Calls: Network Only
   if (url.includes('omdbapi.com')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // UI Assets: Network-First
-  // This ensures the browser always tries to get the newest app.js/style.css
+  // 2. UI Assets: Network-First, but ONLY use cache if network fails
+  // We stop "putting" things into the cache here to avoid the version mismatch
   event.respondWith(
     fetch(event.request)
-      .then((response) => {
-        // Update the cache with the fresh version we just fetched
-        const resClone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resClone));
-        return response;
+      .catch(() => {
+        return caches.match(event.request);
       })
-      .catch(() => caches.match(event.request)) // Fallback to cache if offline
   );
 });
 
