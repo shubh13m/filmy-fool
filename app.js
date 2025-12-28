@@ -1,6 +1,6 @@
 // --- INITIALIZE APP ---
 window.addEventListener('load', () => {
-    // Moved inside load so it's visible after a successful update
+    // Version log for debugging - Update this number manually each time
     console.log("%c Filmy Fool Version: 1.0.10 ", "color: white; background: #6200ee; padding: 5px; border-radius: 5px; font-weight: bold;");
 
     const submitBtn = document.getElementById('submit-review');
@@ -13,35 +13,41 @@ window.addEventListener('load', () => {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').then(reg => {
             
-            // 1. Polling: Check for updates every 15 minutes
-            setInterval(() => {
-                reg.update();
-                console.log("Filmy Fool: Checking for updates...");
-            }, 1000 * 60 * 15);
+            // Check for updates immediately on registration
+            reg.update(); 
 
-            // 2. Detection: Logic when a new service worker is found
+            // Logic to detect when a new service worker is found/installed
             reg.onupdatefound = () => {
                 const installingWorker = reg.installing;
                 installingWorker.onstatechange = () => {
-                    // Only show the pulse if it's installed and we already have a controller
-                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        showUpdatePulse();
+                    // Trigger pulse as soon as it's 'installed' and waiting
+                    if (installingWorker.state === 'installed') {
+                        if (navigator.serviceWorker.controller) {
+                            console.log("Filmy Fool: New version installed and waiting.");
+                            showUpdatePulse();
+                        }
                     }
                 };
             };
 
-            // Initial check: if there is already a waiting worker on load
+            // Initial check: if there is already a waiting worker from a previous session
             if (reg.waiting) {
                 showUpdatePulse();
             }
         });
 
-        // 3. Reload: Refresh the page once the new SW takes over
+        // Refresh the page once the new SW takes over (skips waiting)
         let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (refreshing) return;
-            refreshing = true;
-            window.location.reload();
+            
+            // Controller Guard: Only reload if the page was already controlled by a worker.
+            // This prevents a first-time visitor from seeing a "double refresh".
+            if (navigator.serviceWorker.controller) {
+                refreshing = true;
+                console.log("Filmy Fool: App updated. Reloading...");
+                window.location.reload();
+            }
         });
     }
 
@@ -85,11 +91,11 @@ window.handleUpdateClick = function() {
     if (updateBtn && updateBtn.classList.contains('update-available')) {
         navigator.serviceWorker.getRegistration().then(reg => {
             if (reg && reg.waiting) {
-                // Tell the waiting worker to skipWaiting
+                // Send signal to SW to activate immediately
                 reg.waiting.postMessage({ action: 'skipWaiting' });
             } else {
-                // Fallback: If no worker is waiting but button is glowing, force reload
-                window.location.reload(true);
+                // Fallback for edge cases
+                window.location.reload();
             }
         });
     } else {
