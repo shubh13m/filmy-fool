@@ -1,4 +1,4 @@
-const CACHE_NAME = 'filmyfool-v3'; // Updated version
+const CACHE_NAME = 'filmyfool-v4'; // Updated version
 const ASSETS = [
   './',
   './index.html',
