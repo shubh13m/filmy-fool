@@ -1,13 +1,13 @@
 /**
  * FlixMix - Movie Discovery App
- * Version: 1.0.16
+ * Version: 1.0.17
  * Strategy: Multi-Lane Discovery with Recursive Fallback
  */
 
 // --- INITIALIZE APP ---
 window.addEventListener('load', () => {
     // Version log for debugging
-    console.log("%c Filmy Fool Version: 1.0.16 ", "color: white; background: #6200ee; padding: 5px; border-radius: 5px; font-weight: bold;");
+    console.log("%c Filmy Fool Version: 1.0.17 ", "color: white; background: #6200ee; padding: 5px; border-radius: 5px; font-weight: bold;");
 
     const submitBtn = document.getElementById('submit-review');
     if (submitBtn) submitBtn.onclick = submitReview;
@@ -120,15 +120,11 @@ async function startDailyDiscovery(retryCount = 0) {
     const container = document.getElementById('card-container');
     if (!container) return;
     
-    // Only show loading message on initial try
     if (retryCount === 0) {
         container.innerHTML = '<div class="loading">Curating your daily mix...</div>';
     }
 
-    // Attempt 1: Rating >= 7.0 | Attempt 2: Rating >= 6.0
     const ratingThreshold = retryCount === 0 ? 7.0 : 6.0;
-    
-    // Pick 3 random lanes for a balanced mix
     const lanes = Object.keys(genreLanes).sort(() => Math.random() - 0.5).slice(0, 3);
     const selectedKeywords = lanes.map(lane => {
         const keywords = genreLanes[lane];
@@ -145,15 +141,11 @@ async function startDailyDiscovery(retryCount = 0) {
 
         results.forEach(data => {
             if (data.Response === "True") {
-                // Grab up to 5 IDs per keyword
                 data.Search.slice(0, 5).forEach(m => allPotentialIDs.push(m.imdbID));
             }
         });
 
-        // Filter: No duplicates, No history
         const uniqueIDs = [...new Set(allPotentialIDs)].filter(id => !state.history.some(h => h.id === id));
-
-        // Fetch detailed data for the top 15 candidates
         const detailPromises = uniqueIDs.slice(0, 15).map(id => 
             fetch(`${BASE_URL}?i=${id}&apikey=${OMDB_API_KEY}`).then(r => r.json())
         );
@@ -165,16 +157,13 @@ async function startDailyDiscovery(retryCount = 0) {
             return !isNaN(rating) && rating >= ratingThreshold && m.Poster !== "N/A";
         });
 
-        // RECURSIVE FALLBACK: If we have less than 5 movies, try once more with wider criteria
         if (foundMovies.length < 5 && retryCount < 1) {
-            console.warn(`Only found ${foundMovies.length} high-rated movies. Retrying with lower threshold...`);
+            console.warn(`Only found ${foundMovies.length} high-rated movies. Retrying...`);
             return startDailyDiscovery(retryCount + 1);
         }
 
-        // Final Error: If even after fallback we have 0 movies
         if (foundMovies.length === 0) throw new Error("EMPTY");
 
-        // Randomize the final results and take 5
         state.dailyQueue = foundMovies.sort(() => Math.random() - 0.5).slice(0, 5);
         state.queueDate = new Date().toDateString();
         
@@ -213,16 +202,17 @@ function renderStack() {
         
         const poster = movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/500x750?text=No+Poster";
 
+        // Structured for "Bottom-Up" layout to keep buttons visible
         card.innerHTML = `
             <img src="${poster}" alt="${movie.Title}" class="movie-poster" onerror="this.src='https://via.placeholder.com/500x750?text=Poster+Error'">
             <div class="movie-footer">
                 <div class="movie-info">
-                    <h3>${movie.Title}</h3>
-                    <p>⭐ ${movie.imdbRating} | ${movie.Genre.split(',')[0]}</p>
+                    <h3 style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0;">${movie.Title}</h3>
+                    <p style="margin: 4px 0 12px 0;">⭐ ${movie.imdbRating} | ${movie.Genre.split(',')[0]}</p>
                 </div>
                 <div class="card-actions">
-                    <button class="cross-btn" onclick="handleSwipe(false)">✖</button>
-                    <button class="check-btn" onclick="handleSwipe(true)">✔</button>
+                    <button class="cross-btn" onclick="handleSwipe(false)" aria-label="Skip">✖</button>
+                    <button class="check-btn" onclick="handleSwipe(true)" aria-label="Watch">✔</button>
                 </div>
             </div>
         `;
@@ -246,7 +236,6 @@ function handleSwipe(isMatch) {
             localStorage.setItem('filmyfool_picked', JSON.stringify(movie));
             showReviewScreen();
         } else {
-            // Track skipped movies in history so they don't reappear immediately
             updateHistory(movie.imdbID, { id: movie.imdbID, title: movie.Title, skipped: true, date: new Date().toLocaleDateString() });
             renderStack(); 
         }
