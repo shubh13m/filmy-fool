@@ -87,7 +87,6 @@ html, body {
 }
 
 /* --- NAV BUTTONS --- */
-/* --- NAV BUTTONS --- */
 #view-history-btn, #update-btn, #refresh-btn {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -104,19 +103,16 @@ html, body {
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
-/* Specific Dice Animation on Click */
 #refresh-btn:active { 
     transform: rotate(180deg) scale(0.9); 
     background: var(--surface-light);
 }
 
-/* Hover effects for Desktop users */
 #view-history-btn:hover, #refresh-btn:hover {
     background: var(--surface-light);
     border-color: var(--primary);
 }
 
-/* Update Button Logic (Dimmed when no update) */
 #update-btn { 
     opacity: 0.3; 
     background: transparent; 
@@ -154,14 +150,15 @@ html, body {
     position: absolute;
     width: 92%;
     max-width: 380px;
-    height: 75vh;
-    max-height: 580px;
+    height: 70vh; /* Reduced from 75vh to ensure buttons fit on most screens */
+    max-height: 560px;
     background: var(--surface);
     border-radius: 30px;
     overflow: hidden;
     box-shadow: var(--shadow);
     display: flex;
     flex-direction: column;
+    justify-content: flex-end; /* CONTENT PUSHED TO BOTTOM */
     border: 1px solid var(--border);
     will-change: transform, opacity;
     touch-action: none;
@@ -170,27 +167,31 @@ html, body {
 .movie-poster {
     width: 100%;
     flex: 1;
+    min-height: 0; /* CRITICAL: Allows image to shrink so buttons stay visible */
     object-fit: cover;
     background-color: var(--surface-light);
 }
 
 .movie-footer {
-    flex-shrink: 0;
-    padding: 18px 22px 24px 22px;
-    background: linear-gradient(to top, var(--surface) 85%, transparent);
+    flex-shrink: 0; /* Prevents buttons from being squashed */
+    padding: 15px 22px 20px 22px;
+    background: var(--surface); /* Changed from gradient to solid for clarity */
 }
 
 .movie-info h3 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     font-weight: 700;
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Prevents long titles from pushing buttons down */
 }
 
 .movie-info p {
-    margin: 6px 0 18px 0;
+    margin: 4px 0 12px 0;
     color: var(--text-dim);
-    font-size: 0.95rem;
+    font-size: 0.9rem;
 }
 
 /* --- CARD ACTIONS --- */
@@ -199,10 +200,10 @@ html, body {
 .card-actions button {
     background: var(--surface-light);
     border: 1px solid var(--border);
-    width: 62px;
-    height: 62px;
+    width: 58px; /* Slightly smaller to fit better */
+    height: 58px;
     border-radius: 50%;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     cursor: pointer;
     display: flex;
     align-items: center;
