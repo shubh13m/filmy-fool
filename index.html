@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0a0f1e"> 
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>FilmyFool</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
@@ -19,11 +21,10 @@
     </div>
     
     <div id="app">
-
         <section id="history-view" class="hidden">
             <div class="history-header">
                 <h2>Your Watch History</h2>
-                <button onclick="toggleHistory(false)">✕</button>
+                <button onclick="toggleHistory(false)" class="close-btn">✕</button>
             </div>
             <div id="history-list"></div>
         </section>
@@ -33,6 +34,10 @@
                 <h1 class="logo"><span>Filmy</span><span>Fool</span></h1>
                 
                 <div class="nav-controls">
+                    <button id="refresh-btn" onclick="startDailyDiscovery()" title="New Mix" aria-label="Refresh Mix">
+                        <span class="icon">🎲</span>
+                    </button>
+
                     <button id="update-btn" onclick="handleUpdateClick()" title="App is up to date" aria-label="Update App">
                         <span class="icon">✨</span>
                     </button>
