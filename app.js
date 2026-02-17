@@ -102,7 +102,8 @@ let state = {
         queueDate: localStorage.getItem('filmyfool_shows_date') || "",
         pickedMovie: JSON.parse(localStorage.getItem('filmyfool_shows_picked')) || null
     },
-    history: JSON.parse(localStorage.getItem('filmyfool_history')) || []
+    history: JSON.parse(localStorage.getItem('filmyfool_history')) || [],
+    lastAction: null // Stores {type, item, isMatch} for undo
 };
 
 // --- CSV DATA STORAGE ---
@@ -364,12 +365,18 @@ function renderStack(type) {
                 </div>
                 <div class="card-actions">
                     <button class="cross-btn" onclick="handleSwipe(false, '${type}')" aria-label="Skip">✖</button>
+                    <button class="undo-btn hidden" onclick="undoLastAction()" aria-label="Undo">↶</button>
                     <button class="check-btn" onclick="handleSwipe(true, '${type}')" aria-label="Watch">✔</button>
                 </div>
             </div>
         `;
         container.appendChild(card);
     });
+    
+    // After rendering, show undo button if there's a last action
+    if (state.lastAction && state.lastAction.type === type) {
+        showUndoButton();
+    }
 }
 
 function handleSwipe(isMatch, type) {
@@ -384,15 +391,47 @@ function handleSwipe(isMatch, type) {
         const item = stateObj.dailyQueue.pop(); 
         localStorage.setItem(`filmyfool_${type}_queue`, JSON.stringify(stateObj.dailyQueue));
 
+        // Store for undo
+        state.lastAction = { type: type, item: item, isMatch: isMatch };
+
         if (isMatch) {
             stateObj.pickedMovie = item;
             localStorage.setItem(`filmyfool_${type}_picked`, JSON.stringify(item));
             showReviewScreen(type);
         } else {
+            // Show rejected card peek on left
+            showRejectedCardPeek(item);
             updateHistory(item.imdbID, { id: item.imdbID, title: item.Title, skipped: true, date: new Date().toLocaleDateString(), type: type });
-            renderStack(type); 
+            renderStack(type);
+            // showUndoButton() is called inside renderStack after cards are rendered
         }
     }, { once: true });
+}
+
+function showRejectedCardPeek(item) {
+    const container = document.getElementById('card-container');
+    if (!container) return;
+    
+    // Remove any existing peek cards
+    const existingPeek = container.querySelector('.rejected-card-peek');
+    if (existingPeek) existingPeek.remove();
+    
+    const peekCard = document.createElement('div');
+    peekCard.className = 'rejected-card-peek';
+    const poster = item.Poster !== "N/A" ? item.Poster : "https://via.placeholder.com/500x750?text=No+Poster";
+    
+    peekCard.innerHTML = `
+        <img src="${poster}" alt="${item.Title}" class="movie-poster" style="width: 100%; height: 100%; object-fit: cover;">
+    `;
+    
+    container.appendChild(peekCard);
+    
+    // Remove after animation completes
+    setTimeout(() => {
+        if (peekCard.parentNode) {
+            peekCard.remove();
+        }
+    }, 2000);
 }
 
 function showReviewScreen(type) {
@@ -405,6 +444,16 @@ function showReviewScreen(type) {
     
     // Store current type in review screen
     document.getElementById('review-view').setAttribute('data-type', type);
+    
+    // Show/hide undo link based on lastAction
+    const undoLink = document.querySelector('.undo-link');
+    if (undoLink) {
+        if (state.lastAction && state.lastAction.isMatch) {
+            undoLink.style.display = 'block';
+        } else {
+            undoLink.style.display = 'none';
+        }
+    }
     
     // Reset review form
     document.querySelectorAll('input[name="star"]').forEach(input => input.checked = false);
@@ -435,6 +484,9 @@ function submitReview() {
     updateHistory(stateObj.pickedMovie.imdbID, reviewData);
     stateObj.pickedMovie = null;
     localStorage.removeItem(`filmyfool_${type}_picked`);
+
+    // Clear undo state after review is submitted - can't undo a rated movie
+    state.lastAction = null;
 
     document.getElementById('review-view').classList.add('hidden');
     document.getElementById('discovery-view').classList.remove('hidden');
@@ -496,6 +548,12 @@ function switchTab(tab) {
     document.getElementById('review-view').classList.add('hidden');
     document.getElementById('discovery-view').classList.remove('hidden');
     
+    // Clear undo when switching tabs - this will prevent showing undo on wrong tab
+    const previousTab = state.currentTab;
+    if (previousTab !== tab) {
+        state.lastAction = null;
+    }
+    
     if (tab === 'releases') {
         const container = document.getElementById('card-container');
         container.innerHTML = `
@@ -538,5 +596,79 @@ function refreshCurrentTab() {
         alert('New releases feature coming soon!');
         return;
     }
+    // Clear undo state when refreshing
+    state.lastAction = null;
     startDailyDiscovery(state.currentTab);
+}
+
+// --- UNDO FUNCTIONALITY ---
+function showUndoButton() {
+    // Get the top card (highest z-index)
+    const cards = document.querySelectorAll('.movie-card');
+    if (cards.length === 0) return;
+    
+    const topCard = cards[cards.length - 1];
+    const undoBtn = topCard.querySelector('.undo-btn');
+    const crossBtn = topCard.querySelector('.cross-btn');
+    const checkBtn = topCard.querySelector('.check-btn');
+    
+    if (undoBtn) undoBtn.classList.remove('hidden');
+    if (crossBtn) crossBtn.classList.add('hidden');
+    if (checkBtn) checkBtn.classList.add('hidden');
+}
+
+function hideUndoButton() {
+    // Get the top card (highest z-index)
+    const cards = document.querySelectorAll('.movie-card');
+    if (cards.length === 0) return;
+    
+    const topCard = cards[cards.length - 1];
+    const undoBtn = topCard.querySelector('.undo-btn');
+    const crossBtn = topCard.querySelector('.cross-btn');
+    const checkBtn = topCard.querySelector('.check-btn');
+    
+    if (undoBtn) undoBtn.classList.add('hidden');
+    if (crossBtn) crossBtn.classList.remove('hidden');
+    if (checkBtn) checkBtn.classList.remove('hidden');
+}
+
+function undoLastAction() {
+    if (!state.lastAction) return;
+    
+    const { type, item, isMatch } = state.lastAction;
+    const stateObj = state[type];
+    const container = document.getElementById('card-container');
+    
+    if (isMatch) {
+        // Undo accept: remove from picked, add back to queue
+        stateObj.pickedMovie = null;
+        localStorage.removeItem(`filmyfool_${type}_picked`);
+        stateObj.dailyQueue.push(item);
+        localStorage.setItem(`filmyfool_${type}_queue`, JSON.stringify(stateObj.dailyQueue));
+        
+        // Hide review screen and show cards
+        document.getElementById('review-view').classList.add('hidden');
+        document.getElementById('discovery-view').classList.remove('hidden');
+        
+        // Clear last action BEFORE rendering
+        state.lastAction = null;
+        renderStack(type);
+        // Don't show undo button after undo
+    } else {
+        // Undo skip: remove rejected card peek, remove from history, add back to queue
+        const peekCard = container?.querySelector('.rejected-card-peek');
+        if (peekCard) {
+            peekCard.remove();
+        }
+        
+        state.history = state.history.filter(h => h.id !== item.imdbID);
+        localStorage.setItem('filmyfool_history', JSON.stringify(state.history));
+        stateObj.dailyQueue.push(item);
+        localStorage.setItem(`filmyfool_${type}_queue`, JSON.stringify(stateObj.dailyQueue));
+        
+        // Clear last action BEFORE rendering
+        state.lastAction = null;
+        renderStack(type);
+        // Don't show undo button after undo
+    }
 }

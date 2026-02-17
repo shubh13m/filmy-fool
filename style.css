@@ -149,8 +149,8 @@ html, body {
 
 .movie-card {
     position: absolute;
-    width: 92%;
-    max-width: 380px;
+    width: 85%;
+    max-width: 340px;
     height: 70vh; /* Reduced from 75vh to ensure buttons fit on most screens */
     max-height: 560px;
     background: var(--surface);
@@ -163,38 +163,69 @@ html, body {
     border: 1px solid var(--border);
     will-change: transform, opacity;
     touch-action: none;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
 }
 
-/* Stacked card effect - cards below the top one are offset to the right and scaled down */
-.movie-card[data-card-index="0"] {
-    transform: translateX(12px) translateY(8px) scale(0.92) rotate(1deg);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-    opacity: 0.7;
-}
-
+/* Only show top 3 cards in stack, hide cards 0 and 1 behind card 2 */
+.movie-card[data-card-index="0"],
 .movie-card[data-card-index="1"] {
-    transform: translateX(8px) translateY(5px) scale(0.94) rotate(0.5deg);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.25);
-    opacity: 0.8;
+    display: none;
 }
 
+/* Card 2 (3rd from top) - base of visible stack */
 .movie-card[data-card-index="2"] {
-    transform: translateX(4px) translateY(3px) scale(0.96);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    opacity: 0.9;
+    transform: translateX(8px) translateY(8px) scale(1);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+    opacity: 1;
 }
 
+/* Card 3 (2nd from top) */
 .movie-card[data-card-index="3"] {
-    transform: translateX(2px) translateY(1px) scale(0.98);
-    box-shadow: 0 12px 35px rgba(0,0,0,0.35);
-    opacity: 0.95;
+    transform: translateX(4px) translateY(4px) scale(1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    opacity: 1;
 }
 
+/* Card 4 (top card) */
 .movie-card[data-card-index="4"] {
     transform: translateX(0) translateY(0) scale(1);
     box-shadow: 0 15px 45px rgba(0,0,0,0.4);
     opacity: 1;
+}
+
+/* Rejected card peek on left side */
+.rejected-card-peek {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%) translateX(-95%);
+    width: 85%;
+    max-width: 340px;
+    height: 70vh;
+    max-height: 560px;
+    background: var(--surface);
+    border-radius: 30px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+    z-index: 0;
+    animation: peek-fade-out 2s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes peek-fade-out {
+    0% {
+        opacity: 1;
+        transform: translateY(-50%) translateX(-95%);
+    }
+    70% {
+        opacity: 1;
+        transform: translateY(-50%) translateX(-95%);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-50%) translateX(-100%);
+    }
 }
 
 .movie-poster {
@@ -246,6 +277,15 @@ html, body {
 
 .card-actions .cross-btn { color: #ff5252; }
 .card-actions .check-btn { color: #00e676; }
+.card-actions .undo-btn { 
+    color: var(--primary); 
+    background: rgba(98, 0, 238, 0.1);
+    border-color: var(--primary);
+}
+.card-actions .undo-btn:hover {
+    background: rgba(98, 0, 238, 0.2);
+    transform: scale(1.05);
+}
 .card-actions button:active { transform: scale(0.9); }
 
 /* --- REVIEW VIEW --- */
@@ -267,6 +307,22 @@ html, body {
     width: 100%;
     max-width: 400px;
     margin: 0 auto;
+}
+
+.undo-link {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin: -10px 0 15px 0;
+    padding: 5px;
+    transition: color 0.2s;
+    display: none; /* Hidden by default */
+}
+
+.undo-link:hover {
+    color: var(--primary);
 }
 
 .stars-rating { 
