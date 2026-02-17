@@ -72,14 +72,17 @@
         </div>
     </div>
 
+    <button onclick="downloadBoth()" style="background: #03dac6; font-size: 18px; padding: 16px 32px;">⬇️ Download Both Icons</button>
+
     <div class="instructions">
         <h3>Instructions:</h3>
         <ol style="text-align: left;">
-            <li>Click each download button to save the icons</li>
-            <li>Replace the existing icon-192.png and icon-512.png files in your project</li>
-            <li>The icons are already configured in your manifest.json</li>
-            <li>Clear your browser cache or use incognito mode to see the new icons</li>
+            <li><strong>Click "Download Both Icons"</strong> above (or use individual buttons)</li>
+            <li>Move both downloaded PNG files to your <code>filmy-fool</code> folder</li>
+            <li>When asked, choose <strong>"Replace"</strong> to overwrite old icons</li>
+            <li>Refresh your browser with <strong>Ctrl+Shift+R</strong> (hard refresh) to see new icons</li>
         </ol>
+        <p style="margin-top: 20px; color: #fbbc04;">⚠️ <strong>Important:</strong> Use Ctrl+Shift+R (Windows) or Cmd+Shift+R (Mac) to clear cache and see the new icons!</p>
     </div>
 
     <script>
@@ -107,6 +110,13 @@
             link.download = filename;
             link.href = canvas.toDataURL('image/png');
             link.click();
+        }
+
+        function downloadBoth() {
+            downloadIcon('icon192', 'icon-192.png');
+            setTimeout(() => {
+                downloadIcon('icon512', 'icon-512.png');
+            }, 100);
         }
 
         // Generate icons on page load

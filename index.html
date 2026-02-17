@@ -25,6 +25,21 @@
     </div>
     
     <div id="app">
+        <!-- Tutorial Overlay -->
+        <div id="tutorial-overlay" class="hidden">
+            <div class="tutorial-bubble">
+                <div class="bubble-content">
+                    <div class="bubble-step">Step <span class="step-current">1</span> of <span class="step-total">6</span></div>
+                    <p class="bubble-text"></p>
+                </div>
+                <div class="bubble-actions">
+                    <button class="tutorial-skip" onclick="skipTutorial()">Skip Tutorial</button>
+                    <button class="tutorial-next" onclick="nextTutorialStep()">Next</button>
+                </div>
+            </div>
+            <div class="tutorial-pointer"></div>
+        </div>
+
         <section id="history-view" class="hidden">
             <div class="history-header">
                 <h2>Your Watch History</h2>

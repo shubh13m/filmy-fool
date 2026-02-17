@@ -8,6 +8,7 @@
 window.addEventListener('load', () => {
     // Version log for debugging
     console.log("%c Filmy Fool Version: 23.0.0 ", "color: white; background: #6200ee; padding: 5px; border-radius: 5px; font-weight: bold;");
+    console.log("%c 💡 Tip: Want to see the tutorial again? Type resetTutorial() in the console ", "color: #fbbc04; font-style: italic;");
 
     const submitBtn = document.getElementById('submit-review');
     if (submitBtn) submitBtn.onclick = submitReview;
@@ -85,6 +86,9 @@ window.addEventListener('load', () => {
             
             hideSplash();
             updateTabUI();
+            
+            // Check if this is first time user
+            checkAndShowTutorial();
         });
     });
 });
@@ -104,6 +108,37 @@ let state = {
     },
     history: JSON.parse(localStorage.getItem('filmyfool_history')) || [],
     lastAction: null // Stores {type, item, isMatch} for undo
+};
+
+// --- TUTORIAL STATE ---
+let tutorialState = {
+    currentStep: 0,
+    steps: [
+        {
+            text: "Welcome to <strong>FilmyFool</strong>! 👋<br><br>Get a fresh mix of 5 handpicked movies or shows daily. Let me show you around!",
+            highlight: null
+        },
+        {
+            text: "<strong>Swipe or tap</strong> the buttons to make your choice:<br><br>✖ Skip this one<br>✔ I'll watch it!",
+            highlight: '.card-actions'
+        },
+        {
+            text: "Changed your mind? Use the <strong>↶ Undo button</strong> to reverse your last action!",
+            highlight: '.undo-btn'
+        },
+        {
+            text: "Switch between <strong>Movies and TV Shows</strong> anytime. Each tab has its own daily mix!",
+            highlight: '.bottom-nav'
+        },
+        {
+            text: "Hit <strong>🎲 New Mix</strong> to get 5 fresh picks whenever you want more options.",
+            highlight: '#refresh-btn'
+        },
+        {
+            text: "View your watch history and ratings by tapping <strong>📜 History</strong>.<br><br>That's it! Happy discovering! 🎬",
+            highlight: '#view-history-btn'
+        }
+    ]
 };
 
 // --- CSV DATA STORAGE ---
@@ -653,7 +688,6 @@ function undoLastAction() {
         // Clear last action BEFORE rendering
         state.lastAction = null;
         renderStack(type);
-        // Don't show undo button after undo
     } else {
         // Undo skip: remove rejected card peek, remove from history, add back to queue
         const peekCard = container?.querySelector('.rejected-card-peek');
@@ -669,6 +703,96 @@ function undoLastAction() {
         // Clear last action BEFORE rendering
         state.lastAction = null;
         renderStack(type);
-        // Don't show undo button after undo
     }
 }
+
+// --- TUTORIAL FUNCTIONS ---
+function checkAndShowTutorial() {
+    const hasSeenTutorial = localStorage.getItem('filmyfool_tutorial_completed');
+    if (!hasSeenTutorial) {
+        setTimeout(() => {
+            startTutorial();
+        }, 500); // Small delay after app loads
+    }
+}
+
+function startTutorial() {
+    tutorialState.currentStep = 0;
+    const overlay = document.getElementById('tutorial-overlay');
+    overlay.classList.remove('hidden');
+    showTutorialStep(0);
+}
+
+function showTutorialStep(stepIndex) {
+    const step = tutorialState.steps[stepIndex];
+    const bubble = document.querySelector('.tutorial-bubble');
+    const overlay = document.getElementById('tutorial-overlay');
+    
+    // Update step counter
+    document.querySelector('.step-current').textContent = stepIndex + 1;
+    document.querySelector('.step-total').textContent = tutorialState.steps.length;
+    
+    // Update text
+    document.querySelector('.bubble-text').innerHTML = step.text;
+    
+    // Remove previous highlights
+    document.querySelectorAll('.tutorial-highlight').forEach(el => {
+        el.classList.remove('tutorial-highlight');
+    });
+    
+    // Add highlight to target element
+    if (step.highlight) {
+        const target = document.querySelector(step.highlight);
+        if (target) {
+            target.classList.add('tutorial-highlight');
+        }
+    }
+    
+    // Update button text on last step
+    const nextBtn = document.querySelector('.tutorial-next');
+    if (stepIndex === tutorialState.steps.length - 1) {
+        nextBtn.textContent = 'Got it!';
+    } else {
+        nextBtn.textContent = 'Next';
+    }
+    
+    // Animate bubble entrance
+    bubble.style.animation = 'none';
+    setTimeout(() => {
+        bubble.style.animation = 'bubbleSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    }, 10);
+}
+
+function nextTutorialStep() {
+    tutorialState.currentStep++;
+    
+    if (tutorialState.currentStep >= tutorialState.steps.length) {
+        completeTutorial();
+    } else {
+        showTutorialStep(tutorialState.currentStep);
+    }
+}
+
+function skipTutorial() {
+    completeTutorial();
+}
+
+function completeTutorial() {
+    // Remove all highlights
+    document.querySelectorAll('.tutorial-highlight').forEach(el => {
+        el.classList.remove('tutorial-highlight');
+    });
+    
+    // Hide overlay
+    const overlay = document.getElementById('tutorial-overlay');
+    overlay.classList.add('hidden');
+    
+    // Mark tutorial as completed
+    localStorage.setItem('filmyfool_tutorial_completed', 'true');
+}
+
+// Global function to reset tutorial (can be called from console)
+window.resetTutorial = function() {
+    localStorage.removeItem('filmyfool_tutorial_completed');
+    console.log('%c ✅ Tutorial reset! Refresh the page to see it again.', 'color: #03dac6; font-weight: bold;');
+};
