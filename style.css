@@ -104,7 +104,7 @@ html, body {
 }
 
 /* --- NAV BUTTONS --- */
-#view-history-btn, #update-btn, #refresh-btn {
+#theme-toggle-btn, #view-history-btn, #update-btn, #refresh-btn {
     background: var(--surface);
     border: 1px solid var(--border);
     width: 44px;
@@ -125,7 +125,7 @@ html, body {
     background: var(--surface-light);
 }
 
-#view-history-btn:hover, #refresh-btn:hover {
+#theme-toggle-btn:hover, #view-history-btn:hover, #refresh-btn:hover {
     background: var(--surface-light);
     border-color: var(--primary);
 }
@@ -341,28 +341,24 @@ html, body {
     padding: 0 4px; 
     transition: color 0.2s;
     position: relative;
+    display: inline-block;
 }
 
-.stars-rating input:checked ~ label, 
-.stars-rating input:checked ~ input ~ label,
-.stars-rating label:hover, 
-.stars-rating label:hover ~ label,
-.stars-rating label:hover ~ input ~ label { 
+.stars-rating label:hover,
+.stars-rating label:hover ~ label {
     color: var(--accent-fool); 
 }
 
-/* Half-star effect */
-.stars-rating input[value="0.5"]:checked ~ label:nth-of-type(1)::before,
-.stars-rating input[value="1.5"]:checked ~ label:nth-of-type(2)::before,
-.stars-rating input[value="2.5"]:checked ~ label:nth-of-type(3)::before,
-.stars-rating input[value="3.5"]:checked ~ label:nth-of-type(4)::before,
-.stars-rating input[value="4.5"]:checked ~ label:nth-of-type(5)::before {
-    content: "★";
-    position: absolute;
-    left: 4px;
-    width: 50%;
-    overflow: hidden;
+/* Star states controlled by JavaScript */
+.stars-rating label.star-filled {
     color: var(--accent-fool);
+}
+
+.stars-rating label.star-half {
+    background: linear-gradient(90deg, var(--accent-fool) 0%, var(--accent-fool) 50%, var(--surface-light) 50%, var(--surface-light) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 /* --- TOGGLES & INPUTS --- */

@@ -388,7 +388,7 @@ function renderStack(type) {
 
     [...stateObj.dailyQueue].forEach((item, index) => {
         const card = document.createElement('div');
-        card.className = 'movie-card card-entrance';
+        card.className = 'movie-card';
         card.style.zIndex = index;
         card.setAttribute('data-card-index', index);
         
@@ -408,15 +408,6 @@ function renderStack(type) {
                 </div>
             </div>
         `;
-        
-        // Add staggered entrance animation
-        card.style.animationDelay = `${index * 0.05}s`;
-        
-        // Remove entrance class after animation completes
-        card.addEventListener('animationend', () => {
-            card.classList.remove('card-entrance');
-            card.style.animationDelay = '';
-        }, { once: true });
         
         container.appendChild(card);
     });
@@ -442,7 +433,15 @@ function handleSwipe(isMatch, type) {
             // Show rejected card peek on left
             showRejectedCardPeek(item);
             updateHistory(item.imdbID, { id: item.imdbID, title: item.Title, skipped: true, date: new Date().toLocaleDateString(), type: type });
-            renderStack(type);
+            
+            // Just remove the swiped card - remaining cards will smoothly transition up
+            topCard.remove();
+            
+            // Check if queue is empty
+            if (stateObj.dailyQueue.length === 0) {
+                const container = document.getElementById('card-container');
+                container.innerHTML = `<div class="loading"><h3>All caught up!</h3><p>Check back tomorrow for a new batch.</p></div>`;
+            }
         }
     }, { once: true });
 }
@@ -486,20 +485,41 @@ function showReviewScreen(type) {
     
     // Reset review form
     document.querySelectorAll('input[name="star"]').forEach(input => input.checked = false);
+    updateStarDisplay(0);
     const familyBtn = document.getElementById('btn-family');
     const repeatBtn = document.getElementById('btn-repeat');
     if(familyBtn) familyBtn.checked = false;
     if(repeatBtn) repeatBtn.checked = false;
     
     // Add click handlers for half-star support
-    document.querySelectorAll('.stars-rating label').forEach(label => {
+    document.querySelectorAll('.stars-rating label').forEach((label, index) => {
         label.onclick = (e) => {
+            e.preventDefault();
             const rect = label.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
             const isLeftHalf = clickX < rect.width / 2;
             const starValue = isLeftHalf ? label.dataset.half : label.dataset.value;
-            document.getElementById(`star${starValue}`).checked = true;
+            const targetInput = document.getElementById(`star${starValue}`);
+            if (targetInput) {
+                targetInput.checked = true;
+                updateStarDisplay(parseFloat(starValue));
+            }
         };
+    });
+}
+
+function updateStarDisplay(rating) {
+    const labels = document.querySelectorAll('.stars-rating label');
+    labels.forEach((label, index) => {
+        // Labels are in reverse order (5, 4, 3, 2, 1)
+        const starNumber = 5 - index;
+        label.classList.remove('star-filled', 'star-half');
+        
+        if (starNumber <= Math.floor(rating)) {
+            label.classList.add('star-filled');
+        } else if (starNumber === Math.ceil(rating) && rating % 1 !== 0) {
+            label.classList.add('star-half');
+        }
     });
 }
 
