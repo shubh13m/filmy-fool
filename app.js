@@ -114,23 +114,23 @@ let tutorialState = {
     currentStep: 0,
     steps: [
         {
-            text: "Welcome to <strong>FilmyFool</strong>! 👋<br><br>Get a fresh mix of 5 handpicked movies or shows daily. Let me show you around!",
+            text: "Welcome to <strong>FilmyFool</strong>! 👋 Discover 5 handpicked movies or shows daily.",
             highlight: null
         },
         {
-            text: "<strong>Swipe or tap</strong> the buttons to make your choice:<br><br>✖ Skip this one<br>✔ I'll watch it!",
+            text: "Tap <strong>✖ to skip</strong> or <strong>✔ to watch</strong>. It's that simple!",
             highlight: '.card-actions'
         },
         {
-            text: "Switch between <strong>Movies and TV Shows</strong> anytime. Each tab has its own daily mix!",
+            text: "Switch between <strong>Movies</strong> and <strong>TV Shows</strong>. Each has its own daily mix!",
             highlight: '.bottom-nav'
         },
         {
-            text: "Hit <strong>🎲 New Mix</strong> to get 5 fresh picks whenever you want more options.",
+            text: "Need more options? Tap here for a <strong>fresh mix</strong> anytime!",
             highlight: '#refresh-btn'
         },
         {
-            text: "View your watch history and ratings by tapping <strong>📜 History</strong>.<br><br>That's it! Happy discovering! 🎬",
+            text: "Check your <strong>watch history</strong> and ratings here. Happy discovering! 🎬",
             highlight: '#view-history-btn'
         }
     ]
@@ -612,49 +612,116 @@ function checkAndShowTutorial() {
 
 function startTutorial() {
     tutorialState.currentStep = 0;
-    const overlay = document.getElementById('tutorial-overlay');
-    overlay.classList.remove('hidden');
+    const backdrop = document.getElementById('tutorial-backdrop');
+    backdrop.classList.remove('hidden');
     showTutorialStep(0);
 }
 
 function showTutorialStep(stepIndex) {
     const step = tutorialState.steps[stepIndex];
-    const bubble = document.querySelector('.tutorial-bubble');
-    const overlay = document.getElementById('tutorial-overlay');
+    const tooltip = document.getElementById('tutorial-tooltip');
+    const arrow = document.querySelector('.tooltip-arrow');
     
     // Update step counter
     document.querySelector('.step-current').textContent = stepIndex + 1;
     document.querySelector('.step-total').textContent = tutorialState.steps.length;
     
     // Update text
-    document.querySelector('.bubble-text').innerHTML = step.text;
+    document.querySelector('.tooltip-text').innerHTML = step.text;
     
     // Remove previous highlights
     document.querySelectorAll('.tutorial-highlight').forEach(el => {
         el.classList.remove('tutorial-highlight');
     });
     
-    // Add highlight to target element
+    // Remove previous arrow classes
+    arrow.className = 'tooltip-arrow';
+    
+    // Show tooltip
+    tooltip.classList.remove('hidden');
+    
+    // Position tooltip next to target element
     if (step.highlight) {
         const target = document.querySelector(step.highlight);
         if (target) {
             target.classList.add('tutorial-highlight');
+            positionTooltip(tooltip, target, arrow);
+        } else {
+            // If no target, center the tooltip
+            tooltip.style.top = '50%';
+            tooltip.style.left = '50%';
+            tooltip.style.transform = 'translate(-50%, -50%)';
         }
+    } else {
+        // First step - center tooltip
+        tooltip.style.top = '50%';
+        tooltip.style.left = '50%';
+        tooltip.style.transform = 'translate(-50%, -50%)';
     }
     
     // Update button text on last step
-    const nextBtn = document.querySelector('.tutorial-next');
+    const nextBtn = document.querySelector('.tooltip-next');
     if (stepIndex === tutorialState.steps.length - 1) {
         nextBtn.textContent = 'Got it!';
     } else {
         nextBtn.textContent = 'Next';
     }
     
-    // Animate bubble entrance
-    bubble.style.animation = 'none';
+    // Animate tooltip entrance
+    tooltip.style.animation = 'none';
     setTimeout(() => {
-        bubble.style.animation = 'bubbleSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        tooltip.style.animation = 'tooltipSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
     }, 10);
+}
+
+function positionTooltip(tooltip, target, arrow) {
+    const targetRect = target.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const padding = 16;
+    
+    // Determine best position (prefer bottom, then top, then sides)
+    let position = 'bottom';
+    
+    // Check if there's space below
+    if (targetRect.bottom + tooltipRect.height + padding + 30 > viewportHeight) {
+        // Try top
+        if (targetRect.top - tooltipRect.height - padding - 30 > 0) {
+            position = 'top';
+        } else {
+            // Try right
+            if (targetRect.right + tooltipRect.width + padding + 30 < viewportWidth) {
+                position = 'right';
+            } else {
+                // Default to left
+                position = 'left';
+            }
+        }
+    }
+    
+    // Position tooltip and arrow based on chosen position
+    if (position === 'bottom') {
+        tooltip.style.top = `${targetRect.bottom + 20}px`;
+        tooltip.style.left = `${targetRect.left + targetRect.width / 2}px`;
+        tooltip.style.transform = 'translateX(-50%)';
+        arrow.classList.add('top');
+    } else if (position === 'top') {
+        tooltip.style.top = `${targetRect.top - 20}px`;
+        tooltip.style.left = `${targetRect.left + targetRect.width / 2}px`;
+        tooltip.style.transform = 'translate(-50%, -100%)';
+        arrow.classList.add('bottom');
+    } else if (position === 'right') {
+        tooltip.style.top = `${targetRect.top + targetRect.height / 2}px`;
+        tooltip.style.left = `${targetRect.right + 20}px`;
+        tooltip.style.transform = 'translateY(-50%)';
+        arrow.classList.add('left');
+    } else { // left
+        tooltip.style.top = `${targetRect.top + targetRect.height / 2}px`;
+        tooltip.style.left = `${targetRect.left - 20}px`;
+        tooltip.style.transform = 'translate(-100%, -50%)';
+        arrow.classList.add('right');
+    }
 }
 
 function nextTutorialStep() {
@@ -677,9 +744,11 @@ function completeTutorial() {
         el.classList.remove('tutorial-highlight');
     });
     
-    // Hide overlay
-    const overlay = document.getElementById('tutorial-overlay');
-    overlay.classList.add('hidden');
+    // Hide tooltip and backdrop
+    const tooltip = document.getElementById('tutorial-tooltip');
+    const backdrop = document.getElementById('tutorial-backdrop');
+    tooltip.classList.add('hidden');
+    backdrop.classList.add('hidden');
     
     // Mark tutorial as completed
     localStorage.setItem('filmyfool_tutorial_completed', 'true');

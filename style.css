@@ -166,31 +166,29 @@ html, body {
     transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
 }
 
-/* Only show top 3 cards in stack, hide cards 0 and 1 behind card 2 */
-.movie-card[data-card-index="0"],
-.movie-card[data-card-index="1"] {
-    display: none;
-}
-
-/* Card 2 (3rd from top) - base of visible stack */
-.movie-card[data-card-index="2"] {
-    transform: translateX(8px) translateY(8px) scale(1);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.25);
-    opacity: 1;
-}
-
-/* Card 3 (2nd from top) */
-.movie-card[data-card-index="3"] {
-    transform: translateX(4px) translateY(4px) scale(1);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    opacity: 1;
-}
-
-/* Card 4 (top card) */
-.movie-card[data-card-index="4"] {
+/* Stack effect - show all cards with increasing visibility */
+/* Bottom cards in stack have slight offset */
+.movie-card {
     transform: translateX(0) translateY(0) scale(1);
     box-shadow: 0 15px 45px rgba(0,0,0,0.4);
     opacity: 1;
+}
+
+/* Cards behind the top card get slight offsets based on z-index */
+.movie-card:nth-last-child(3) {
+    transform: translateX(8px) translateY(8px) scale(0.98);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+}
+
+.movie-card:nth-last-child(2) {
+    transform: translateX(4px) translateY(4px) scale(0.99);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.movie-card:nth-last-child(n+4) {
+    /* Hide cards that are 4+ positions from the top */
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* Rejected card peek on left side */
@@ -354,42 +352,44 @@ input:checked + .slider:before { transform: translateX(22px); }
     width: 100%; margin-top: 15px; cursor: pointer;
 }
 
-/* === TUTORIAL OVERLAY === */
-#tutorial-overlay {
+/* === TUTORIAL TOOLTIP === */
+#tutorial-backdrop {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(10, 15, 30, 0.95);
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: rgba(10, 15, 30, 0.85);
+    z-index: 9998;
     animation: fadeIn 0.3s ease;
 }
 
-#tutorial-overlay.hidden {
+#tutorial-backdrop.hidden {
     display: none;
 }
 
-.tutorial-bubble {
+#tutorial-tooltip {
+    position: fixed;
     background: linear-gradient(135deg, #1a1f3a 0%, #0f1528 100%);
     border: 2px solid var(--primary);
-    border-radius: 24px;
-    padding: 24px;
-    max-width: 400px;
-    width: 90%;
+    border-radius: 16px;
+    padding: 16px 20px;
+    max-width: 320px;
+    width: auto;
     box-shadow: 
-        0 20px 60px rgba(98, 0, 238, 0.3),
-        0 0 40px rgba(98, 0, 238, 0.2);
-    animation: bubbleSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    position: relative;
+        0 20px 60px rgba(98, 0, 238, 0.4),
+        0 0 40px rgba(98, 0, 238, 0.3);
+    z-index: 9999;
+    animation: tooltipSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes bubbleSlideIn {
+#tutorial-tooltip.hidden {
+    display: none;
+}
+
+@keyframes tooltipSlideIn {
     from {
-        transform: scale(0.8) translateY(20px);
+        transform: scale(0.9) translateY(10px);
         opacity: 0;
     }
     to {
@@ -398,101 +398,148 @@ input:checked + .slider:before { transform: translateX(22px); }
     }
 }
 
-.bubble-content {
-    margin-bottom: 20px;
+.tooltip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
 }
 
-.bubble-step {
+.tooltip-step {
     color: var(--primary);
-    font-size: 0.85rem;
-    font-weight: 600;
-    margin-bottom: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.bubble-text {
-    color: var(--text-main);
-    font-size: 1.1rem;
-    line-height: 1.6;
-    margin: 0;
+.tooltip-close {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s;
 }
 
-.bubble-text strong {
+.tooltip-close:hover {
+    color: var(--text-main);
+}
+
+.tooltip-text {
+    color: var(--text-main);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0 0 16px 0;
+}
+
+.tooltip-text strong {
     color: var(--accent-fool);
     font-weight: 600;
 }
 
-.bubble-actions {
+.tooltip-actions {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     justify-content: flex-end;
 }
 
-.tutorial-skip,
-.tutorial-next {
-    padding: 10px 20px;
-    border-radius: 12px;
+.tooltip-skip,
+.tooltip-next {
+    padding: 8px 16px;
+    border-radius: 10px;
     border: none;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
 }
 
-.tutorial-skip {
+.tooltip-skip {
     background: transparent;
     color: var(--text-dim);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.tutorial-skip:hover {
+.tooltip-skip:hover {
     background: rgba(255, 255, 255, 0.05);
     color: var(--text-main);
 }
 
-.tutorial-next {
+.tooltip-next {
     background: var(--primary);
     color: white;
 }
 
-.tutorial-next:hover {
+.tooltip-next:hover {
     background: var(--primary-variant);
-    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(98, 0, 238, 0.4);
 }
 
-.tutorial-pointer {
+/* Tooltip arrow pointing to highlighted element */
+.tooltip-arrow {
     position: absolute;
     width: 0;
     height: 0;
-    border-left: 15px solid transparent;
-    border-right: 15px solid transparent;
-    border-top: 15px solid var(--primary);
-    bottom: -15px;
+    border: 10px solid transparent;
+}
+
+/* Arrow positions - dynamically set by JavaScript */
+.tooltip-arrow.top {
+    bottom: -20px;
     left: 50%;
     transform: translateX(-50%);
-    filter: drop-shadow(0 3px 6px rgba(98, 0, 238, 0.3));
-    display: none;
+    border-top-color: var(--primary);
+    border-bottom: 0;
 }
 
-.tutorial-pointer.show {
-    display: block;
+.tooltip-arrow.bottom {
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-bottom-color: var(--primary);
+    border-top: 0;
 }
 
-/* Highlight effect for tutorial targets */
+.tooltip-arrow.left {
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-left-color: var(--primary);
+    border-right: 0;
+}
+
+.tooltip-arrow.right {
+    left: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-right-color: var(--primary);
+    border-left: 0;
+}
+
+/* Spotlight highlight for tutorial targets */
 .tutorial-highlight {
     position: relative;
-    z-index: 10001;
+    z-index: 9999 !important;
+    box-shadow: 
+        0 0 0 4px rgba(255, 215, 0, 0.4),
+        0 0 40px 8px rgba(255, 215, 0, 0.3) !important;
+    border-radius: 12px;
     animation: pulseGlow 2s ease-in-out infinite;
 }
 
 @keyframes pulseGlow {
     0%, 100% {
-        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+        box-shadow: 
+            0 0 0 4px rgba(255, 215, 0, 0.4),
+            0 0 40px 8px rgba(255, 215, 0, 0.3);
     }
     50% {
-        box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0.3);
+        box-shadow: 
+            0 0 0 4px rgba(255, 215, 0, 0.6),
+            0 0 40px 12px rgba(255, 215, 0, 0.5);
     }
 }
 

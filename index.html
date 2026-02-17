@@ -25,19 +25,21 @@
     </div>
     
     <div id="app">
-        <!-- Tutorial Overlay -->
-        <div id="tutorial-overlay" class="hidden">
-            <div class="tutorial-bubble">
-                <div class="bubble-content">
-                    <div class="bubble-step">Step <span class="step-current">1</span> of <span class="step-total">5</span></div>
-                    <p class="bubble-text"></p>
-                </div>
-                <div class="bubble-actions">
-                    <button class="tutorial-skip" onclick="skipTutorial()">Skip Tutorial</button>
-                    <button class="tutorial-next" onclick="nextTutorialStep()">Next</button>
-                </div>
+        <!-- Tutorial Backdrop -->
+        <div id="tutorial-backdrop" class="hidden"></div>
+        
+        <!-- Tutorial Tooltip -->
+        <div id="tutorial-tooltip" class="hidden">
+            <div class="tooltip-header">
+                <span class="tooltip-step">Tip <span class="step-current">1</span>/<span class="step-total">5</span></span>
+                <button class="tooltip-close" onclick="skipTutorial()">✕</button>
             </div>
-            <div class="tutorial-pointer"></div>
+            <p class="tooltip-text"></p>
+            <div class="tooltip-actions">
+                <button class="tooltip-skip" onclick="skipTutorial()">Skip</button>
+                <button class="tooltip-next" onclick="nextTutorialStep()">Next</button>
+            </div>
+            <div class="tooltip-arrow"></div>
         </div>
 
         <section id="history-view" class="hidden">
