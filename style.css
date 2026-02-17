@@ -144,6 +144,7 @@ html, body {
     justify-content: center;
     align-items: center; 
     padding: 15px;
+    perspective: 1000px; /* Add 3D perspective */
 }
 
 .movie-card {
@@ -162,6 +163,33 @@ html, body {
     border: 1px solid var(--border);
     will-change: transform, opacity;
     touch-action: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Stacked card effect - cards below the top one are offset to the right and scaled down */
+.movie-card[style*="z-index: 0"] {
+    transform: translateX(12px) translateY(8px) scale(0.92) rotate(1deg);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+
+.movie-card[style*="z-index: 1"] {
+    transform: translateX(8px) translateY(5px) scale(0.94) rotate(0.5deg);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+}
+
+.movie-card[style*="z-index: 2"] {
+    transform: translateX(4px) translateY(3px) scale(0.96);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.movie-card[style*="z-index: 3"] {
+    transform: translateX(2px) translateY(1px) scale(0.98);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.35);
+}
+
+.movie-card[style*="z-index: 4"] {
+    transform: translateX(0) translateY(0) scale(1);
+    box-shadow: 0 15px 45px rgba(0,0,0,0.4);
 }
 
 .movie-poster {
