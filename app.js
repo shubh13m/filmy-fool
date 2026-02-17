@@ -349,7 +349,8 @@ function renderStack(type) {
     [...stateObj.dailyQueue].forEach((item, index) => {
         const card = document.createElement('div');
         card.className = 'movie-card';
-        card.style.zIndex = index; 
+        card.style.zIndex = index;
+        card.setAttribute('data-card-index', index);
         
         const poster = item.Poster !== "N/A" ? item.Poster : "https://via.placeholder.com/500x750?text=No+Poster";
 

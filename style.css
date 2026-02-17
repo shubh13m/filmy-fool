@@ -167,29 +167,34 @@ html, body {
 }
 
 /* Stacked card effect - cards below the top one are offset to the right and scaled down */
-.movie-card[style*="z-index: 0"] {
+.movie-card[data-card-index="0"] {
     transform: translateX(12px) translateY(8px) scale(0.92) rotate(1deg);
     box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    opacity: 0.7;
 }
 
-.movie-card[style*="z-index: 1"] {
+.movie-card[data-card-index="1"] {
     transform: translateX(8px) translateY(5px) scale(0.94) rotate(0.5deg);
     box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+    opacity: 0.8;
 }
 
-.movie-card[style*="z-index: 2"] {
+.movie-card[data-card-index="2"] {
     transform: translateX(4px) translateY(3px) scale(0.96);
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    opacity: 0.9;
 }
 
-.movie-card[style*="z-index: 3"] {
+.movie-card[data-card-index="3"] {
     transform: translateX(2px) translateY(1px) scale(0.98);
     box-shadow: 0 12px 35px rgba(0,0,0,0.35);
+    opacity: 0.95;
 }
 
-.movie-card[style*="z-index: 4"] {
+.movie-card[data-card-index="4"] {
     transform: translateX(0) translateY(0) scale(1);
     box-shadow: 0 15px 45px rgba(0,0,0,0.4);
+    opacity: 1;
 }
 
 .movie-poster {
