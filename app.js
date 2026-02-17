@@ -123,8 +123,8 @@ let tutorialState = {
             highlight: '.card-actions'
         },
         {
-            text: "Changed your mind? Use the <strong>↶ Undo button</strong> to reverse your last action!",
-            highlight: '.undo-btn'
+            text: "Changed your mind? The <strong>↶ Undo button</strong> appears at the bottom after each action!",
+            highlight: '#floating-undo'
         },
         {
             text: "Switch between <strong>Movies and TV Shows</strong> anytime. Each tab has its own daily mix!",
@@ -400,7 +400,6 @@ function renderStack(type) {
                 </div>
                 <div class="card-actions">
                     <button class="cross-btn" onclick="handleSwipe(false, '${type}')" aria-label="Skip">✖</button>
-                    <button class="undo-btn hidden" onclick="undoLastAction()" aria-label="Undo">↶</button>
                     <button class="check-btn" onclick="handleSwipe(true, '${type}')" aria-label="Watch">✔</button>
                 </div>
             </div>
@@ -408,9 +407,11 @@ function renderStack(type) {
         container.appendChild(card);
     });
     
-    // After rendering, show undo button if there's a last action
+    // After rendering, show floating undo button if there's a last action
     if (state.lastAction && state.lastAction.type === type) {
-        showUndoButton();
+        showFloatingUndo();
+    } else {
+        hideFloatingUndo();
     }
 }
 
@@ -587,6 +588,7 @@ function switchTab(tab) {
     const previousTab = state.currentTab;
     if (previousTab !== tab) {
         state.lastAction = null;
+        hideFloatingUndo();
     }
     
     if (tab === 'releases') {
@@ -633,38 +635,23 @@ function refreshCurrentTab() {
     }
     // Clear undo state when refreshing
     state.lastAction = null;
+    hideFloatingUndo();
     startDailyDiscovery(state.currentTab);
 }
 
 // --- UNDO FUNCTIONALITY ---
-function showUndoButton() {
-    // Get the top card (highest z-index)
-    const cards = document.querySelectorAll('.movie-card');
-    if (cards.length === 0) return;
-    
-    const topCard = cards[cards.length - 1];
-    const undoBtn = topCard.querySelector('.undo-btn');
-    const crossBtn = topCard.querySelector('.cross-btn');
-    const checkBtn = topCard.querySelector('.check-btn');
-    
-    if (undoBtn) undoBtn.classList.remove('hidden');
-    if (crossBtn) crossBtn.classList.add('hidden');
-    if (checkBtn) checkBtn.classList.add('hidden');
+function showFloatingUndo() {
+    const floatingUndo = document.getElementById('floating-undo');
+    if (floatingUndo) {
+        floatingUndo.classList.remove('hidden');
+    }
 }
 
-function hideUndoButton() {
-    // Get the top card (highest z-index)
-    const cards = document.querySelectorAll('.movie-card');
-    if (cards.length === 0) return;
-    
-    const topCard = cards[cards.length - 1];
-    const undoBtn = topCard.querySelector('.undo-btn');
-    const crossBtn = topCard.querySelector('.cross-btn');
-    const checkBtn = topCard.querySelector('.check-btn');
-    
-    if (undoBtn) undoBtn.classList.add('hidden');
-    if (crossBtn) crossBtn.classList.remove('hidden');
-    if (checkBtn) checkBtn.classList.remove('hidden');
+function hideFloatingUndo() {
+    const floatingUndo = document.getElementById('floating-undo');
+    if (floatingUndo) {
+        floatingUndo.classList.add('hidden');
+    }
 }
 
 function undoLastAction() {
@@ -685,7 +672,8 @@ function undoLastAction() {
         document.getElementById('review-view').classList.add('hidden');
         document.getElementById('discovery-view').classList.remove('hidden');
         
-        // Clear last action BEFORE rendering
+        // Hide floating undo and clear last action BEFORE rendering
+        hideFloatingUndo();
         state.lastAction = null;
         renderStack(type);
     } else {
@@ -700,7 +688,8 @@ function undoLastAction() {
         stateObj.dailyQueue.push(item);
         localStorage.setItem(`filmyfool_${type}_queue`, JSON.stringify(stateObj.dailyQueue));
         
-        // Clear last action BEFORE rendering
+        // Hide floating undo and clear last action BEFORE rendering
+        hideFloatingUndo();
         state.lastAction = null;
         renderStack(type);
     }

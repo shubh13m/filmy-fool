@@ -70,6 +70,12 @@
                 <div class="loading">Preparing your mix...</div>
             </div>
 
+            <!-- Floating Undo Button -->
+            <button id="floating-undo" class="hidden" onclick="undoLastAction()" aria-label="Undo Last Action">
+                <span class="undo-icon">↶</span>
+                <span class="undo-text">Undo</span>
+            </button>
+
             <nav class="bottom-nav">
                 <button class="nav-tab active" data-tab="movies" onclick="switchTab('movies')">
                     <span class="tab-icon">🎬</span>
