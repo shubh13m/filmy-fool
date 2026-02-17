@@ -49,6 +49,9 @@ window.addEventListener('load', () => {
         });
     }
 
+    // --- APPLY THEME ---
+    applyTheme();
+    
     // --- LOAD CSV DATA FIRST ---
     loadAllData().then(() => {
         // --- VIEW ROUTING ---
@@ -106,7 +109,8 @@ let state = {
         queueDate: localStorage.getItem('filmyfool_shows_date') || "",
         pickedMovie: JSON.parse(localStorage.getItem('filmyfool_shows_picked')) || null
     },
-    history: JSON.parse(localStorage.getItem('filmyfool_history')) || []
+    history: JSON.parse(localStorage.getItem('filmyfool_history')) || [],
+    theme: localStorage.getItem('filmyfool_theme') || 'dark'
 };
 
 // --- TUTORIAL STATE ---
@@ -114,24 +118,29 @@ let tutorialState = {
     currentStep: 0,
     steps: [
         {
-            text: "Welcome to <strong>FilmyFool</strong>! 👋 Discover 5 handpicked movies or shows daily.",
-            highlight: null
+            icon: "🎬",
+            title: "Welcome to FilmyFool!",
+            description: "Discover 5 handpicked movies or shows daily. Swipe through your personalized mix and find your next watch."
         },
         {
-            text: "Tap <strong>✖ to skip</strong> or <strong>✔ to watch</strong>. It's that simple!",
-            highlight: '.card-actions'
+            icon: "👆",
+            title: "Simple Controls",
+            description: "Tap <strong>✖ to skip</strong> or <strong>✔ to watch</strong>. It's that easy! Your choices help us understand your taste."
         },
         {
-            text: "Switch between <strong>Movies</strong> and <strong>TV Shows</strong>. Each has its own daily mix!",
-            highlight: '.bottom-nav'
+            icon: "📺",
+            title: "Movies & Shows",
+            description: "Switch between <strong>Movies</strong> and <strong>TV Shows</strong> tabs at the bottom. Each has its own daily curated mix!"
         },
         {
-            text: "Need more options? Tap here for a <strong>fresh mix</strong> anytime!",
-            highlight: '#refresh-btn'
+            icon: "🎲",
+            title: "Fresh Mix Anytime",
+            description: "Not feeling today's picks? Tap the <strong>🎲 New Mix</strong> button for 5 brand new recommendations instantly."
         },
         {
-            text: "Check your <strong>watch history</strong> and ratings here. Happy discovering! 🎬",
-            highlight: '#view-history-btn'
+            icon: "✨",
+            title: "You're All Set!",
+            description: "Check your <strong>📜 History</strong> to see past watches and ratings. Happy discovering!"
         }
     ]
 };
@@ -379,7 +388,7 @@ function renderStack(type) {
 
     [...stateObj.dailyQueue].forEach((item, index) => {
         const card = document.createElement('div');
-        card.className = 'movie-card';
+        card.className = 'movie-card card-entrance';
         card.style.zIndex = index;
         card.setAttribute('data-card-index', index);
         
@@ -399,6 +408,16 @@ function renderStack(type) {
                 </div>
             </div>
         `;
+        
+        // Add staggered entrance animation
+        card.style.animationDelay = `${index * 0.05}s`;
+        
+        // Remove entrance class after animation completes
+        card.addEventListener('animationend', () => {
+            card.classList.remove('card-entrance');
+            card.style.animationDelay = '';
+        }, { once: true });
+        
         container.appendChild(card);
     });
 }
@@ -471,6 +490,17 @@ function showReviewScreen(type) {
     const repeatBtn = document.getElementById('btn-repeat');
     if(familyBtn) familyBtn.checked = false;
     if(repeatBtn) repeatBtn.checked = false;
+    
+    // Add click handlers for half-star support
+    document.querySelectorAll('.stars-rating label').forEach(label => {
+        label.onclick = (e) => {
+            const rect = label.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const isLeftHalf = clickX < rect.width / 2;
+            const starValue = isLeftHalf ? label.dataset.half : label.dataset.value;
+            document.getElementById(`star${starValue}`).checked = true;
+        };
+    });
 }
 
 function submitReview() {
@@ -484,7 +514,7 @@ function submitReview() {
     const reviewData = {
         id: stateObj.pickedMovie.imdbID,
         title: stateObj.pickedMovie.Title,
-        userRating: parseInt(ratingInput.value),
+        userRating: parseFloat(ratingInput.value),
         familyFriendly: document.getElementById('btn-family')?.checked || false,
         repeatWatch: document.getElementById('btn-repeat')?.checked || false,
         date: new Date().toLocaleDateString(),
@@ -504,6 +534,14 @@ function updateHistory(id, data) {
     state.history = state.history.filter(h => h.id !== id);
     state.history.push(data);
     localStorage.setItem('filmyfool_history', JSON.stringify(state.history));
+}
+
+function renderStars(rating) {
+    const fullStars = Math.floor(rating);
+    const hasHalf = rating % 1 !== 0;
+    let stars = '★'.repeat(fullStars);
+    if (hasHalf) stars += '½';
+    return stars;
 }
 
 function toggleHistory(show) {
@@ -543,7 +581,7 @@ function renderHistory() {
                     ${typeTag}${familyTag}${watchAgainTag}
                 </div>
             </div>
-            <div class="history-badge" style="font-weight:bold; color:var(--primary);">${'★'.repeat(item.userRating)}</div>
+            <div class="history-badge" style="font-weight:bold; color:var(--primary);">${renderStars(item.userRating)}</div>
         `;
         list.appendChild(div);
     });
@@ -600,6 +638,26 @@ function refreshCurrentTab() {
     startDailyDiscovery(state.currentTab);
 }
 
+// --- THEME FUNCTIONS ---
+function toggleTheme() {
+    state.theme = state.theme === 'dark' ? 'light' : 'dark';
+    applyTheme();
+    localStorage.setItem('filmyfool_theme', state.theme);
+}
+
+function applyTheme() {
+    const root = document.documentElement;
+    const themeIcon = document.querySelector('#theme-toggle-btn .icon');
+    
+    if (state.theme === 'light') {
+        root.classList.add('light-theme');
+        if (themeIcon) themeIcon.textContent = '☀️';
+    } else {
+        root.classList.remove('light-theme');
+        if (themeIcon) themeIcon.textContent = '🌙';
+    }
+}
+
 // --- TUTORIAL FUNCTIONS ---
 function checkAndShowTutorial() {
     const hasSeenTutorial = localStorage.getItem('filmyfool_tutorial_completed');
@@ -612,116 +670,50 @@ function checkAndShowTutorial() {
 
 function startTutorial() {
     tutorialState.currentStep = 0;
-    const backdrop = document.getElementById('tutorial-backdrop');
-    backdrop.classList.remove('hidden');
+    const screen = document.getElementById('tutorial-screen');
+    screen.classList.remove('hidden');
     showTutorialStep(0);
+    
+    // Add click handlers to dots
+    document.querySelectorAll('.dot').forEach((dot, index) => {
+        dot.onclick = () => {
+            tutorialState.currentStep = index;
+            showTutorialStep(index);
+        };
+    });
 }
 
 function showTutorialStep(stepIndex) {
     const step = tutorialState.steps[stepIndex];
-    const tooltip = document.getElementById('tutorial-tooltip');
-    const arrow = document.querySelector('.tooltip-arrow');
     
-    // Update step counter
-    document.querySelector('.step-current').textContent = stepIndex + 1;
-    document.querySelector('.step-total').textContent = tutorialState.steps.length;
+    // Update content
+    const iconEl = document.querySelector('.tutorial-icon');
+    const titleEl = document.querySelector('.tutorial-title');
+    const descEl = document.querySelector('.tutorial-description');
     
-    // Update text
-    document.querySelector('.tooltip-text').innerHTML = step.text;
+    iconEl.textContent = step.icon;
+    titleEl.textContent = step.title;
+    descEl.innerHTML = step.description;
     
-    // Remove previous highlights
-    document.querySelectorAll('.tutorial-highlight').forEach(el => {
-        el.classList.remove('tutorial-highlight');
+    // Update dots
+    document.querySelectorAll('.dot').forEach((dot, index) => {
+        dot.classList.toggle('active', index === stepIndex);
     });
     
-    // Remove previous arrow classes
-    arrow.className = 'tooltip-arrow';
-    
-    // Show tooltip
-    tooltip.classList.remove('hidden');
-    
-    // Position tooltip next to target element
-    if (step.highlight) {
-        const target = document.querySelector(step.highlight);
-        if (target) {
-            target.classList.add('tutorial-highlight');
-            positionTooltip(tooltip, target, arrow);
-        } else {
-            // If no target, center the tooltip
-            tooltip.style.top = '50%';
-            tooltip.style.left = '50%';
-            tooltip.style.transform = 'translate(-50%, -50%)';
-        }
-    } else {
-        // First step - center tooltip
-        tooltip.style.top = '50%';
-        tooltip.style.left = '50%';
-        tooltip.style.transform = 'translate(-50%, -50%)';
-    }
-    
     // Update button text on last step
-    const nextBtn = document.querySelector('.tooltip-next');
+    const nextBtn = document.querySelector('.tutorial-next-btn');
     if (stepIndex === tutorialState.steps.length - 1) {
-        nextBtn.textContent = 'Got it!';
+        nextBtn.textContent = 'Get Started';
     } else {
         nextBtn.textContent = 'Next';
     }
     
-    // Animate tooltip entrance
-    tooltip.style.animation = 'none';
+    // Trigger content animation
+    const content = document.querySelector('.tutorial-content');
+    content.style.animation = 'none';
     setTimeout(() => {
-        tooltip.style.animation = 'tooltipSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        content.style.animation = 'slideContent 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
     }, 10);
-}
-
-function positionTooltip(tooltip, target, arrow) {
-    const targetRect = target.getBoundingClientRect();
-    const tooltipRect = tooltip.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const padding = 16;
-    
-    // Determine best position (prefer bottom, then top, then sides)
-    let position = 'bottom';
-    
-    // Check if there's space below
-    if (targetRect.bottom + tooltipRect.height + padding + 30 > viewportHeight) {
-        // Try top
-        if (targetRect.top - tooltipRect.height - padding - 30 > 0) {
-            position = 'top';
-        } else {
-            // Try right
-            if (targetRect.right + tooltipRect.width + padding + 30 < viewportWidth) {
-                position = 'right';
-            } else {
-                // Default to left
-                position = 'left';
-            }
-        }
-    }
-    
-    // Position tooltip and arrow based on chosen position
-    if (position === 'bottom') {
-        tooltip.style.top = `${targetRect.bottom + 20}px`;
-        tooltip.style.left = `${targetRect.left + targetRect.width / 2}px`;
-        tooltip.style.transform = 'translateX(-50%)';
-        arrow.classList.add('top');
-    } else if (position === 'top') {
-        tooltip.style.top = `${targetRect.top - 20}px`;
-        tooltip.style.left = `${targetRect.left + targetRect.width / 2}px`;
-        tooltip.style.transform = 'translate(-50%, -100%)';
-        arrow.classList.add('bottom');
-    } else if (position === 'right') {
-        tooltip.style.top = `${targetRect.top + targetRect.height / 2}px`;
-        tooltip.style.left = `${targetRect.right + 20}px`;
-        tooltip.style.transform = 'translateY(-50%)';
-        arrow.classList.add('left');
-    } else { // left
-        tooltip.style.top = `${targetRect.top + targetRect.height / 2}px`;
-        tooltip.style.left = `${targetRect.left - 20}px`;
-        tooltip.style.transform = 'translate(-100%, -50%)';
-        arrow.classList.add('right');
-    }
 }
 
 function nextTutorialStep() {
@@ -739,16 +731,9 @@ function skipTutorial() {
 }
 
 function completeTutorial() {
-    // Remove all highlights
-    document.querySelectorAll('.tutorial-highlight').forEach(el => {
-        el.classList.remove('tutorial-highlight');
-    });
-    
-    // Hide tooltip and backdrop
-    const tooltip = document.getElementById('tutorial-tooltip');
-    const backdrop = document.getElementById('tutorial-backdrop');
-    tooltip.classList.add('hidden');
-    backdrop.classList.add('hidden');
+    // Hide tutorial screen
+    const screen = document.getElementById('tutorial-screen');
+    screen.classList.add('hidden');
     
     // Mark tutorial as completed
     localStorage.setItem('filmyfool_tutorial_completed', 'true');

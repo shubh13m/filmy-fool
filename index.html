@@ -25,21 +25,29 @@
     </div>
     
     <div id="app">
-        <!-- Tutorial Backdrop -->
-        <div id="tutorial-backdrop" class="hidden"></div>
-        
-        <!-- Tutorial Tooltip -->
-        <div id="tutorial-tooltip" class="hidden">
-            <div class="tooltip-header">
-                <span class="tooltip-step">Tip <span class="step-current">1</span>/<span class="step-total">5</span></span>
-                <button class="tooltip-close" onclick="skipTutorial()">✕</button>
+        <!-- Tutorial Slider -->\n        <div id="tutorial-screen" class="hidden">
+            <div class="tutorial-container">
+                <button class="tutorial-close-btn" onclick="skipTutorial()">×</button>
+                
+                <div class="tutorial-content">
+                    <div class="tutorial-icon">🎬</div>
+                    <h2 class="tutorial-title"></h2>
+                    <p class="tutorial-description"></p>
+                </div>
+                
+                <div class="tutorial-dots">
+                    <span class="dot" data-step="0"></span>
+                    <span class="dot" data-step="1"></span>
+                    <span class="dot" data-step="2"></span>
+                    <span class="dot" data-step="3"></span>
+                    <span class="dot" data-step="4"></span>
+                </div>
+                
+                <div class="tutorial-buttons">
+                    <button class="tutorial-skip-btn" onclick="skipTutorial()">Skip</button>
+                    <button class="tutorial-next-btn" onclick="nextTutorialStep()">Next</button>
+                </div>
             </div>
-            <p class="tooltip-text"></p>
-            <div class="tooltip-actions">
-                <button class="tooltip-skip" onclick="skipTutorial()">Skip</button>
-                <button class="tooltip-next" onclick="nextTutorialStep()">Next</button>
-            </div>
-            <div class="tooltip-arrow"></div>
         </div>
 
         <section id="history-view" class="hidden">
@@ -54,6 +62,10 @@
             <header class="app-header">
                 <h1 class="logo"><span>Filmy</span><span>Fool</span></h1>
                     <div class="nav-controls">
+                        <button id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle Theme">
+                            <span class="icon">🌙</span>
+                        </button>
+                    
                         <button id="update-btn" onclick="handleUpdateClick()">
                             <span class="icon">✨</span>
                         </button>
@@ -93,11 +105,11 @@
                 <h2 id="review-title">Rate your watch</h2>
                 
                 <div class="stars-rating">
-                    <input type="radio" name="star" id="star5" value="5"><label for="star5">★</label>
-                    <input type="radio" name="star" id="star4" value="4"><label for="star4">★</label>
-                    <input type="radio" name="star" id="star3" value="3"><label for="star3">★</label>
-                    <input type="radio" name="star" id="star2" value="2"><label for="star2">★</label>
-                    <input type="radio" name="star" id="star1" value="1"><label for="star1">★</label>
+                    <input type="radio" name="star" id="star5" value="5"><input type="radio" name="star" id="star4.5" value="4.5"><label for="star5" data-value="5" data-half="4.5">★</label>
+                    <input type="radio" name="star" id="star4" value="4"><input type="radio" name="star" id="star3.5" value="3.5"><label for="star4" data-value="4" data-half="3.5">★</label>
+                    <input type="radio" name="star" id="star3" value="3"><input type="radio" name="star" id="star2.5" value="2.5"><label for="star3" data-value="3" data-half="2.5">★</label>
+                    <input type="radio" name="star" id="star2" value="2"><input type="radio" name="star" id="star1.5" value="1.5"><label for="star2" data-value="2" data-half="1.5">★</label>
+                    <input type="radio" name="star" id="star1" value="1"><input type="radio" name="star" id="star0.5" value="0.5"><label for="star1" data-value="1" data-half="0.5">★</label>
                 </div>
 
                 <div class="questions">
