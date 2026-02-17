@@ -7,7 +7,7 @@
 // --- INITIALIZE APP ---
 window.addEventListener('load', () => {
     // Version log for debugging
-    console.log("%c Filmy Fool Version: 2.0.0 ", "color: white; background: #6200ee; padding: 5px; border-radius: 5px; font-weight: bold;");
+    console.log("%c Filmy Fool Version: 23.0.0 ", "color: white; background: #6200ee; padding: 5px; border-radius: 5px; font-weight: bold;");
 
     const submitBtn = document.getElementById('submit-review');
     if (submitBtn) submitBtn.onclick = submitReview;
