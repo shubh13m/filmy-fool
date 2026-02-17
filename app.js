@@ -1,13 +1,13 @@
 /**
  * FlixMix - Movie Discovery App
- * Version: 1.0.17
- * Strategy: Multi-Lane Discovery with Recursive Fallback
+ * Version: 2.0.0
+ * Strategy: CSV-Based Local Discovery
  */
 
 // --- INITIALIZE APP ---
 window.addEventListener('load', () => {
     // Version log for debugging
-    console.log("%c Filmy Fool Version: 1.0.17 ", "color: white; background: #6200ee; padding: 5px; border-radius: 5px; font-weight: bold;");
+    console.log("%c Filmy Fool Version: 2.0.0 ", "color: white; background: #6200ee; padding: 5px; border-radius: 5px; font-weight: bold;");
 
     const submitBtn = document.getElementById('submit-review');
     if (submitBtn) submitBtn.onclick = submitReview;
@@ -48,30 +48,66 @@ window.addEventListener('load', () => {
         });
     }
 
-    // --- VIEW ROUTING ---
-    const today = new Date().toDateString();
-    
-    if (state.pickedMovie) {
-        showReviewScreen();
-        hideSplash();
-    } else if (state.dailyQueue.length > 0 && state.queueDate === today) {
-        renderStack();
-        hideSplash();
-    } else {
-        startDailyDiscovery();
-    }
+    // --- LOAD CSV DATA FIRST ---
+    loadAllData().then(() => {
+        // --- VIEW ROUTING ---
+        const today = new Date().toDateString();
+        
+        // Load both movies and shows on startup (5 each)
+        const promises = [];
+        
+        // Initialize movies if needed
+        if (!state.movies.pickedMovie && (state.movies.dailyQueue.length === 0 || state.movies.queueDate !== today)) {
+            promises.push(startDailyDiscovery('movies'));
+        }
+        
+        // Initialize shows if needed
+        if (!state.shows.pickedMovie && (state.shows.dailyQueue.length === 0 || state.shows.queueDate !== today)) {
+            promises.push(startDailyDiscovery('shows'));
+        }
+        
+        // Wait for both to load
+        Promise.all(promises).then(() => {
+            // Show current tab
+            if (state.currentTab === 'movies') {
+                if (state.movies.pickedMovie) {
+                    showReviewScreen('movies');
+                } else {
+                    renderStack('movies');
+                }
+            } else if (state.currentTab === 'shows') {
+                if (state.shows.pickedMovie) {
+                    showReviewScreen('shows');
+                } else {
+                    renderStack('shows');
+                }
+            }
+            
+            hideSplash();
+            updateTabUI();
+        });
+    });
 });
 
 // --- STATE MANAGEMENT ---
 let state = {
-    dailyQueue: JSON.parse(localStorage.getItem('filmyfool_queue')) || [],
-    queueDate: localStorage.getItem('filmyfool_date') || "",
-    history: JSON.parse(localStorage.getItem('filmyfool_history')) || [],
-    pickedMovie: JSON.parse(localStorage.getItem('filmyfool_picked')) || null
+    currentTab: localStorage.getItem('filmyfool_currentTab') || 'movies',
+    movies: {
+        dailyQueue: JSON.parse(localStorage.getItem('filmyfool_movies_queue')) || [],
+        queueDate: localStorage.getItem('filmyfool_movies_date') || "",
+        pickedMovie: JSON.parse(localStorage.getItem('filmyfool_movies_picked')) || null
+    },
+    shows: {
+        dailyQueue: JSON.parse(localStorage.getItem('filmyfool_shows_queue')) || [],
+        queueDate: localStorage.getItem('filmyfool_shows_date') || "",
+        pickedMovie: JSON.parse(localStorage.getItem('filmyfool_shows_picked')) || null
+    },
+    history: JSON.parse(localStorage.getItem('filmyfool_history')) || []
 };
 
-const OMDB_API_KEY = "4a4effd2"; 
-const BASE_URL = "https://www.omdbapi.com/";
+// --- CSV DATA STORAGE ---
+let moviesDatabase = [];
+let showsDatabase = [];
 
 // --- KEYWORD LIBRARIES (Multi-Lane Strategy) ---
 const genreLanes = {
@@ -80,6 +116,136 @@ const genreLanes = {
     thought: ["Mystery", "Psychological", "Conspiracy", "Identity", "Memory", "Mind-bending", "Investigation", "Detective", "Secret", "Documentary", "Biographical", "Historical"],
     heart: ["Comedy", "Animation", "Family", "Satire", "Drama", "Coming-of-age", "Redemption", "Inspirational", "Romance", "Musical", "Western", "Classic"]
 };
+
+// --- CSV PARSING FUNCTIONS ---
+async function loadMoviesFromCSV() {
+    try {
+        const [top250Response, popularResponse] = await Promise.all([
+            fetch('imdb_top_250.csv'),
+            fetch('popular_movies_not_in_top250_above_7.csv')
+        ]);
+        
+        const top250Text = await top250Response.text();
+        const popularText = await popularResponse.text();
+        
+        const top250Movies = parseCSV(top250Text, false, false);
+        const popularMovies = parseCSV(popularText, true, false);
+        
+        moviesDatabase = [...top250Movies, ...popularMovies];
+        console.log(`Loaded ${moviesDatabase.length} movies from CSV files`);
+    } catch (error) {
+        console.error('Error loading movie CSV files:', error);
+    }
+}
+
+async function loadShowsFromCSV() {
+    try {
+        const [top250Response, popularResponse] = await Promise.all([
+            fetch('imdb_top_250_tv.csv'),
+            fetch('popular_tv_not_in_top250_above_7.csv')
+        ]);
+        
+        const top250Text = await top250Response.text();
+        const popularText = await popularResponse.text();
+        
+        const top250Shows = parseCSV(top250Text, false, true);
+        const popularShows = parseCSV(popularText, true, true);
+        
+        showsDatabase = [...top250Shows, ...popularShows];
+        console.log(`Loaded ${showsDatabase.length} shows from CSV files`);
+    } catch (error) {
+        console.error('Error loading TV show CSV files:', error);
+    }
+}
+
+async function loadAllData() {
+    await Promise.all([loadMoviesFromCSV(), loadShowsFromCSV()]);
+}
+
+function parseCSV(csvText, isPopular, isTVShow) {
+    const lines = csvText.trim().split('\n');
+    const items = [];
+    
+    // Skip header row
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        // Parse CSV line manually to handle edge cases
+        const parts = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let j = 0; j < line.length; j++) {
+            const char = line[j];
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                parts.push(current);
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        parts.push(current); // Add last part
+        
+        if (parts.length >= 6) {
+            const title = parts[1].replace(/&apos;/g, "'").replace(/&amp;/g, "&").replace(/"/g, '');
+            const year = parts[2] || 'N/A';
+            const rating = parts[3];
+            const imdbLink = parts[4];
+            
+            // Extract IMDb ID from link
+            const match = imdbLink.match(/tt\d+/);
+            if (!match) continue;
+            
+            const imdbID = match[0];
+            
+            // Assign genre based on title keywords or random
+            const genre = assignGenre(title);
+            
+            // Determine image path
+            let imagePath;
+            if (isTVShow) {
+                imagePath = isPopular ? `data/images/popular_tv_${imdbID}.jpg` : `data/images/tv_${imdbID}.jpg`;
+            } else {
+                imagePath = isPopular ? `data/images/popular_${imdbID}.jpg` : `data/images/${imdbID}.jpg`;
+            }
+            
+            items.push({
+                Title: title,
+                Year: year,
+                imdbRating: rating,
+                imdbID: imdbID,
+                Genre: genre,
+                Poster: imagePath,
+                RatingCount: parts[5] || '0',
+                Type: isTVShow ? 'show' : 'movie'
+            });
+        }
+    }
+    
+    return items;
+}
+
+function assignGenre(title) {
+    const lowerTitle = title.toLowerCase();
+    
+    // Simple keyword-based genre assignment
+    if (lowerTitle.match(/action|war|battle|fight|soldier|assassin|gun|mission|combat/)) {
+        return genreLanes.pulse[Math.floor(Math.random() * genreLanes.pulse.length)];
+    } else if (lowerTitle.match(/space|star|alien|future|time|galaxy|sci|matrix|blade/)) {
+        return genreLanes.wonder[Math.floor(Math.random() * genreLanes.wonder.length)];
+    } else if (lowerTitle.match(/mystery|detective|secret|mind|memory|investigation|conspiracy/)) {
+        return genreLanes.thought[Math.floor(Math.random() * genreLanes.thought.length)];
+    } else if (lowerTitle.match(/love|heart|family|comedy|life|beautiful|dream|story/)) {
+        return genreLanes.heart[Math.floor(Math.random() * genreLanes.heart.length)];
+    } else {
+        // Random assignment for titles without clear keywords
+        const allGenres = Object.values(genreLanes).flat();
+        return allGenres[Math.floor(Math.random() * allGenres.length)];
+    }
+}
 
 // --- UPDATE HANDLERS ---
 function showUpdatePulse() {
@@ -115,62 +281,44 @@ function hideSplash() {
     }
 }
 
-// --- FETCHING LOGIC WITH RECURSIVE FALLBACK ---
-async function startDailyDiscovery(retryCount = 0) {
+// --- FETCHING LOGIC WITH CSV DATA ---
+async function startDailyDiscovery(type) {
     const container = document.getElementById('card-container');
     if (!container) return;
     
-    if (retryCount === 0) {
-        container.innerHTML = '<div class="loading">Curating your daily mix...</div>';
+    container.innerHTML = '<div class="loading">Curating your daily mix...</div>';
+
+    const database = type === 'movies' ? moviesDatabase : showsDatabase;
+    const stateObj = state[type];
+    
+    // Wait for CSV data to load if not loaded yet
+    if (database.length === 0) {
+        if (type === 'movies') {
+            await loadMoviesFromCSV();
+        } else {
+            await loadShowsFromCSV();
+        }
     }
 
-    const ratingThreshold = retryCount === 0 ? 7.0 : 6.0;
-    const lanes = Object.keys(genreLanes).sort(() => Math.random() - 0.5).slice(0, 3);
-    const selectedKeywords = lanes.map(lane => {
-        const keywords = genreLanes[lane];
-        return keywords[Math.floor(Math.random() * keywords.length)];
-    });
-
     try {
-        const searchPromises = selectedKeywords.map(query => 
-            fetch(`${BASE_URL}?s=${query}&type=movie&apikey=${OMDB_API_KEY}`).then(r => r.json())
-        );
-        
-        const results = await Promise.all(searchPromises);
-        let allPotentialIDs = [];
-
-        results.forEach(data => {
-            if (data.Response === "True") {
-                data.Search.slice(0, 5).forEach(m => allPotentialIDs.push(m.imdbID));
-            }
-        });
-
-        const uniqueIDs = [...new Set(allPotentialIDs)].filter(id => !state.history.some(h => h.id === id));
-        const detailPromises = uniqueIDs.slice(0, 15).map(id => 
-            fetch(`${BASE_URL}?i=${id}&apikey=${OMDB_API_KEY}`).then(r => r.json())
+        // Filter out items already in history
+        const availableItems = database.filter(item => 
+            !state.history.some(h => h.id === item.imdbID)
         );
 
-        const detailedMovies = await Promise.all(detailPromises);
-
-        let foundMovies = detailedMovies.filter(m => {
-            const rating = parseFloat(m.imdbRating);
-            return !isNaN(rating) && rating >= ratingThreshold && m.Poster !== "N/A";
-        });
-
-        if (foundMovies.length < 5 && retryCount < 1) {
-            console.warn(`Only found ${foundMovies.length} high-rated movies. Retrying...`);
-            return startDailyDiscovery(retryCount + 1);
+        if (availableItems.length < 5) {
+            throw new Error(`Not enough new ${type} available`);
         }
 
-        if (foundMovies.length === 0) throw new Error("EMPTY");
-
-        state.dailyQueue = foundMovies.sort(() => Math.random() - 0.5).slice(0, 5);
-        state.queueDate = new Date().toDateString();
+        // Randomly select 5 items from available pool
+        const shuffled = availableItems.sort(() => Math.random() - 0.5);
+        stateObj.dailyQueue = shuffled.slice(0, 5);
+        stateObj.queueDate = new Date().toDateString();
         
-        localStorage.setItem('filmyfool_queue', JSON.stringify(state.dailyQueue));
-        localStorage.setItem('filmyfool_date', state.queueDate);
+        localStorage.setItem(`filmyfool_${type}_queue`, JSON.stringify(stateObj.dailyQueue));
+        localStorage.setItem(`filmyfool_${type}_date`, stateObj.queueDate);
 
-        renderStack();
+        renderStack(type);
         hideSplash();
 
     } catch (err) {
@@ -178,41 +326,44 @@ async function startDailyDiscovery(retryCount = 0) {
         hideSplash();
         container.innerHTML = `
             <div class="error">
-                <p>Could not find enough new movies right now.</p>
+                <p>Could not find enough new ${type} right now.</p>
                 <button onclick="location.reload();" class="gold-btn" style="width:auto; padding:10px 20px;">Try Again</button>
             </div>`;
     }
 }
 
 // --- UI RENDERING ---
-function renderStack() {
+function renderStack(type) {
     const container = document.getElementById('card-container');
     if (!container) return;
     container.innerHTML = '';
 
-    if (state.dailyQueue.length === 0) {
+    const stateObj = state[type];
+    const itemLabel = type === 'movies' ? 'movie' : 'show';
+
+    if (stateObj.dailyQueue.length === 0) {
         container.innerHTML = `<div class="loading"><h3>All caught up!</h3><p>Check back tomorrow for a new batch.</p></div>`;
         return;
     }
 
-    [...state.dailyQueue].forEach((movie, index) => {
+    [...stateObj.dailyQueue].forEach((item, index) => {
         const card = document.createElement('div');
         card.className = 'movie-card';
         card.style.zIndex = index; 
         
-        const poster = movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/500x750?text=No+Poster";
+        const poster = item.Poster !== "N/A" ? item.Poster : "https://via.placeholder.com/500x750?text=No+Poster";
 
         // Structured for "Bottom-Up" layout to keep buttons visible
         card.innerHTML = `
-            <img src="${poster}" alt="${movie.Title}" class="movie-poster" onerror="this.src='https://via.placeholder.com/500x750?text=Poster+Error'">
+            <img src="${poster}" alt="${item.Title}" class="movie-poster" onerror="this.src='https://via.placeholder.com/500x750?text=Poster+Error'">
             <div class="movie-footer">
                 <div class="movie-info">
-                    <h3 style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0;">${movie.Title}</h3>
-                    <p style="margin: 4px 0 12px 0;">⭐ ${movie.imdbRating} | ${movie.Genre.split(',')[0]}</p>
+                    <h3 style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0;">${item.Title}</h3>
+                    <p style="margin: 4px 0 12px 0;">⭐ ${item.imdbRating} | ${item.Genre.split(',')[0]}</p>
                 </div>
                 <div class="card-actions">
-                    <button class="cross-btn" onclick="handleSwipe(false)" aria-label="Skip">✖</button>
-                    <button class="check-btn" onclick="handleSwipe(true)" aria-label="Watch">✔</button>
+                    <button class="cross-btn" onclick="handleSwipe(false, '${type}')" aria-label="Skip">✖</button>
+                    <button class="check-btn" onclick="handleSwipe(true, '${type}')" aria-label="Watch">✔</button>
                 </div>
             </div>
         `;
@@ -220,7 +371,7 @@ function renderStack() {
     });
 }
 
-function handleSwipe(isMatch) {
+function handleSwipe(isMatch, type) {
     const cards = document.querySelectorAll('.movie-card');
     if (cards.length === 0) return;
 
@@ -228,24 +379,31 @@ function handleSwipe(isMatch) {
     topCard.classList.add(isMatch ? 'swipe-right-anim' : 'swipe-left-anim');
 
     topCard.addEventListener('animationend', () => {
-        const movie = state.dailyQueue.pop(); 
-        localStorage.setItem('filmyfool_queue', JSON.stringify(state.dailyQueue));
+        const stateObj = state[type];
+        const item = stateObj.dailyQueue.pop(); 
+        localStorage.setItem(`filmyfool_${type}_queue`, JSON.stringify(stateObj.dailyQueue));
 
         if (isMatch) {
-            state.pickedMovie = movie;
-            localStorage.setItem('filmyfool_picked', JSON.stringify(movie));
-            showReviewScreen();
+            stateObj.pickedMovie = item;
+            localStorage.setItem(`filmyfool_${type}_picked`, JSON.stringify(item));
+            showReviewScreen(type);
         } else {
-            updateHistory(movie.imdbID, { id: movie.imdbID, title: movie.Title, skipped: true, date: new Date().toLocaleDateString() });
-            renderStack(); 
+            updateHistory(item.imdbID, { id: item.imdbID, title: item.Title, skipped: true, date: new Date().toLocaleDateString(), type: type });
+            renderStack(type); 
         }
     }, { once: true });
 }
 
-function showReviewScreen() {
+function showReviewScreen(type) {
     document.getElementById('discovery-view').classList.add('hidden');
     document.getElementById('review-view').classList.remove('hidden');
-    document.getElementById('review-title').innerText = `How was ${state.pickedMovie.Title}?`;
+    
+    const stateObj = state[type];
+    const itemLabel = type === 'movies' ? 'movie' : 'show';
+    document.getElementById('review-title').innerText = `How was ${stateObj.pickedMovie.Title}?`;
+    
+    // Store current type in review screen
+    document.getElementById('review-view').setAttribute('data-type', type);
     
     // Reset review form
     document.querySelectorAll('input[name="star"]').forEach(input => input.checked = false);
@@ -256,25 +414,30 @@ function showReviewScreen() {
 }
 
 function submitReview() {
+    const reviewView = document.getElementById('review-view');
+    const type = reviewView.getAttribute('data-type');
+    const stateObj = state[type];
+    
     const ratingInput = document.querySelector('input[name="star"]:checked');
     if (!ratingInput) return alert("Please select a star rating!");
 
     const reviewData = {
-        id: state.pickedMovie.imdbID,
-        title: state.pickedMovie.Title,
+        id: stateObj.pickedMovie.imdbID,
+        title: stateObj.pickedMovie.Title,
         userRating: parseInt(ratingInput.value),
         familyFriendly: document.getElementById('btn-family')?.checked || false,
         repeatWatch: document.getElementById('btn-repeat')?.checked || false,
-        date: new Date().toLocaleDateString()
+        date: new Date().toLocaleDateString(),
+        type: type
     };
 
-    updateHistory(state.pickedMovie.imdbID, reviewData);
-    state.pickedMovie = null;
-    localStorage.removeItem('filmyfool_picked');
+    updateHistory(stateObj.pickedMovie.imdbID, reviewData);
+    stateObj.pickedMovie = null;
+    localStorage.removeItem(`filmyfool_${type}_picked`);
 
     document.getElementById('review-view').classList.add('hidden');
     document.getElementById('discovery-view').classList.remove('hidden');
-    renderStack();
+    renderStack(type);
 }
 
 function updateHistory(id, data) {
@@ -310,17 +473,69 @@ function renderHistory() {
         div.className = 'history-item';
         const familyTag = item.familyFriendly ? '<span class="tag">👨‍👩‍👧 Family</span>' : '';
         const watchAgainTag = item.repeatWatch ? '<span class="tag">🔁 Re-watch</span>' : '';
+        const typeTag = item.type ? `<span class="tag">${item.type === 'movies' ? '🎬' : '📺'}</span>` : '';
         
         div.innerHTML = `
             <div class="history-info">
                 <h4>${item.title}</h4>
                 <p>${item.date}</p>
                 <div class="history-tags" style="display:flex; gap:5px; margin-top:5px;">
-                    ${familyTag}${watchAgainTag}
+                    ${typeTag}${familyTag}${watchAgainTag}
                 </div>
             </div>
             <div class="history-badge" style="font-weight:bold; color:var(--primary);">${'★'.repeat(item.userRating)}</div>
         `;
         list.appendChild(div);
     });
+}
+
+// --- TAB SWITCHING ---
+function switchTab(tab) {
+    // Always hide review view when switching tabs
+    document.getElementById('review-view').classList.add('hidden');
+    document.getElementById('discovery-view').classList.remove('hidden');
+    
+    if (tab === 'releases') {
+        const container = document.getElementById('card-container');
+        container.innerHTML = `
+            <div class="loading">
+                <h3>🆕 Coming Soon!</h3>
+                <p>New releases feature is under development.</p>
+            </div>`;
+        state.currentTab = tab;
+        localStorage.setItem('filmyfool_currentTab', tab);
+        updateTabUI();
+        return;
+    }
+    
+    state.currentTab = tab;
+    localStorage.setItem('filmyfool_currentTab', tab);
+    updateTabUI();
+    
+    const today = new Date().toDateString();
+    const stateObj = state[tab];
+    
+    // Always show discovery view for tab switching
+    if (stateObj.dailyQueue.length > 0 && stateObj.queueDate === today) {
+        renderStack(tab);
+    } else {
+        startDailyDiscovery(tab);
+    }
+}
+
+function updateTabUI() {
+    document.querySelectorAll('.nav-tab').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-tab') === state.currentTab) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+function refreshCurrentTab() {
+    if (state.currentTab === 'releases') {
+        alert('New releases feature coming soon!');
+        return;
+    }
+    startDailyDiscovery(state.currentTab);
 }

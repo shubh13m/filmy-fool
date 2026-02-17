@@ -6,6 +6,8 @@
     <meta name="theme-color" content="#0a0f1e"> 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <title>FilmyFool</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
@@ -13,7 +15,9 @@
 <body>
     <div id="splash-screen">
         <div class="splash-content">
-            <h1 class="logo"><span>Filmy</span><span>Fool</span></h1>
+            <div class="splash-icon">🎬</div>
+            <h1 class="splash-logo"><span>Filmy</span><span>Fool</span></h1>
+            <p class="splash-tagline">Your Daily Movie Discovery</p>
             <div class="loader-bar">
                 <div class="loader-progress"></div>
             </div>
@@ -37,7 +41,7 @@
                             <span class="icon">✨</span>
                         </button>
                     
-                        <button id="refresh-btn" onclick="startDailyDiscovery()" aria-label="New Mix">
+                        <button id="refresh-btn" onclick="refreshCurrentTab()" aria-label="New Mix">
                             <span class="icon">🎲</span>
                         </button>
                     
@@ -50,6 +54,21 @@
             <div id="card-container">
                 <div class="loading">Preparing your mix...</div>
             </div>
+
+            <nav class="bottom-nav">
+                <button class="nav-tab active" data-tab="movies" onclick="switchTab('movies')">
+                    <span class="tab-icon">🎬</span>
+                    <span class="tab-label">Movies</span>
+                </button>
+                <button class="nav-tab" data-tab="shows" onclick="switchTab('shows')">
+                    <span class="tab-icon">📺</span>
+                    <span class="tab-label">Shows</span>
+                </button>
+                <button class="nav-tab" data-tab="releases" onclick="switchTab('releases')">
+                    <span class="tab-icon">🆕</span>
+                    <span class="tab-label">New Releases</span>
+                </button>
+            </nav>
         </section>
 
         <section id="review-view" class="hidden">
