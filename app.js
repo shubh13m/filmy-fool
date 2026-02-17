@@ -106,8 +106,7 @@ let state = {
         queueDate: localStorage.getItem('filmyfool_shows_date') || "",
         pickedMovie: JSON.parse(localStorage.getItem('filmyfool_shows_picked')) || null
     },
-    history: JSON.parse(localStorage.getItem('filmyfool_history')) || [],
-    lastAction: null // Stores {type, item, isMatch} for undo
+    history: JSON.parse(localStorage.getItem('filmyfool_history')) || []
 };
 
 // --- TUTORIAL STATE ---
@@ -121,10 +120,6 @@ let tutorialState = {
         {
             text: "<strong>Swipe or tap</strong> the buttons to make your choice:<br><br>✖ Skip this one<br>✔ I'll watch it!",
             highlight: '.card-actions'
-        },
-        {
-            text: "Changed your mind? The <strong>↶ Undo button</strong> appears at the bottom after each action!",
-            highlight: '#floating-undo'
         },
         {
             text: "Switch between <strong>Movies and TV Shows</strong> anytime. Each tab has its own daily mix!",
@@ -406,13 +401,6 @@ function renderStack(type) {
         `;
         container.appendChild(card);
     });
-    
-    // After rendering, show floating undo button if there's a last action
-    if (state.lastAction && state.lastAction.type === type) {
-        showFloatingUndo();
-    } else {
-        hideFloatingUndo();
-    }
 }
 
 function handleSwipe(isMatch, type) {
@@ -427,9 +415,6 @@ function handleSwipe(isMatch, type) {
         const item = stateObj.dailyQueue.pop(); 
         localStorage.setItem(`filmyfool_${type}_queue`, JSON.stringify(stateObj.dailyQueue));
 
-        // Store for undo
-        state.lastAction = { type: type, item: item, isMatch: isMatch };
-
         if (isMatch) {
             stateObj.pickedMovie = item;
             localStorage.setItem(`filmyfool_${type}_picked`, JSON.stringify(item));
@@ -439,7 +424,6 @@ function handleSwipe(isMatch, type) {
             showRejectedCardPeek(item);
             updateHistory(item.imdbID, { id: item.imdbID, title: item.Title, skipped: true, date: new Date().toLocaleDateString(), type: type });
             renderStack(type);
-            // showUndoButton() is called inside renderStack after cards are rendered
         }
     }, { once: true });
 }
@@ -481,16 +465,6 @@ function showReviewScreen(type) {
     // Store current type in review screen
     document.getElementById('review-view').setAttribute('data-type', type);
     
-    // Show/hide undo link based on lastAction
-    const undoLink = document.querySelector('.undo-link');
-    if (undoLink) {
-        if (state.lastAction && state.lastAction.isMatch) {
-            undoLink.style.display = 'block';
-        } else {
-            undoLink.style.display = 'none';
-        }
-    }
-    
     // Reset review form
     document.querySelectorAll('input[name="star"]').forEach(input => input.checked = false);
     const familyBtn = document.getElementById('btn-family');
@@ -520,9 +494,6 @@ function submitReview() {
     updateHistory(stateObj.pickedMovie.imdbID, reviewData);
     stateObj.pickedMovie = null;
     localStorage.removeItem(`filmyfool_${type}_picked`);
-
-    // Clear undo state after review is submitted - can't undo a rated movie
-    state.lastAction = null;
 
     document.getElementById('review-view').classList.add('hidden');
     document.getElementById('discovery-view').classList.remove('hidden');
@@ -584,13 +555,6 @@ function switchTab(tab) {
     document.getElementById('review-view').classList.add('hidden');
     document.getElementById('discovery-view').classList.remove('hidden');
     
-    // Clear undo when switching tabs - this will prevent showing undo on wrong tab
-    const previousTab = state.currentTab;
-    if (previousTab !== tab) {
-        state.lastAction = null;
-        hideFloatingUndo();
-    }
-    
     if (tab === 'releases') {
         const container = document.getElementById('card-container');
         container.innerHTML = `
@@ -633,66 +597,7 @@ function refreshCurrentTab() {
         alert('New releases feature coming soon!');
         return;
     }
-    // Clear undo state when refreshing
-    state.lastAction = null;
-    hideFloatingUndo();
     startDailyDiscovery(state.currentTab);
-}
-
-// --- UNDO FUNCTIONALITY ---
-function showFloatingUndo() {
-    const floatingUndo = document.getElementById('floating-undo');
-    if (floatingUndo) {
-        floatingUndo.classList.remove('hidden');
-    }
-}
-
-function hideFloatingUndo() {
-    const floatingUndo = document.getElementById('floating-undo');
-    if (floatingUndo) {
-        floatingUndo.classList.add('hidden');
-    }
-}
-
-function undoLastAction() {
-    if (!state.lastAction) return;
-    
-    const { type, item, isMatch } = state.lastAction;
-    const stateObj = state[type];
-    const container = document.getElementById('card-container');
-    
-    if (isMatch) {
-        // Undo accept: remove from picked, add back to queue
-        stateObj.pickedMovie = null;
-        localStorage.removeItem(`filmyfool_${type}_picked`);
-        stateObj.dailyQueue.push(item);
-        localStorage.setItem(`filmyfool_${type}_queue`, JSON.stringify(stateObj.dailyQueue));
-        
-        // Hide review screen and show cards
-        document.getElementById('review-view').classList.add('hidden');
-        document.getElementById('discovery-view').classList.remove('hidden');
-        
-        // Hide floating undo and clear last action BEFORE rendering
-        hideFloatingUndo();
-        state.lastAction = null;
-        renderStack(type);
-    } else {
-        // Undo skip: remove rejected card peek, remove from history, add back to queue
-        const peekCard = container?.querySelector('.rejected-card-peek');
-        if (peekCard) {
-            peekCard.remove();
-        }
-        
-        state.history = state.history.filter(h => h.id !== item.imdbID);
-        localStorage.setItem('filmyfool_history', JSON.stringify(state.history));
-        stateObj.dailyQueue.push(item);
-        localStorage.setItem(`filmyfool_${type}_queue`, JSON.stringify(stateObj.dailyQueue));
-        
-        // Hide floating undo and clear last action BEFORE rendering
-        hideFloatingUndo();
-        state.lastAction = null;
-        renderStack(type);
-    }
 }
 
 // --- TUTORIAL FUNCTIONS ---

@@ -29,7 +29,7 @@
         <div id="tutorial-overlay" class="hidden">
             <div class="tutorial-bubble">
                 <div class="bubble-content">
-                    <div class="bubble-step">Step <span class="step-current">1</span> of <span class="step-total">6</span></div>
+                    <div class="bubble-step">Step <span class="step-current">1</span> of <span class="step-total">5</span></div>
                     <p class="bubble-text"></p>
                 </div>
                 <div class="bubble-actions">
@@ -70,12 +70,6 @@
                 <div class="loading">Preparing your mix...</div>
             </div>
 
-            <!-- Floating Undo Button -->
-            <button id="floating-undo" class="hidden" onclick="undoLastAction()" aria-label="Undo Last Action">
-                <span class="undo-icon">↶</span>
-                <span class="undo-text">Undo</span>
-            </button>
-
             <nav class="bottom-nav">
                 <button class="nav-tab active" data-tab="movies" onclick="switchTab('movies')">
                     <span class="tab-icon">🎬</span>
@@ -95,7 +89,6 @@
         <section id="review-view" class="hidden">
             <div class="review-card">
                 <h2 id="review-title">Rate your watch</h2>
-                <button class="undo-link" onclick="undoLastAction()">↶ Changed your mind? Undo</button>
                 
                 <div class="stars-rating">
                     <input type="radio" name="star" id="star5" value="5"><label for="star5">★</label>
