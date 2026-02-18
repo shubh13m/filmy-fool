@@ -107,8 +107,8 @@ html, body {
 #theme-toggle-btn, #view-history-btn, #update-btn, #refresh-btn {
     background: var(--surface);
     border: 1px solid var(--border);
-    width: 44px;
-    height: 44px;
+    width: 34px;
+    height: 34px;
     border-radius: 12px;
     display: flex;
     align-items: center;
