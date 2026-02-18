@@ -73,7 +73,7 @@ html, body {
 
 /* --- LOGO STYLE --- */
 .logo {
-    font-size: 2 rem;
+    font-size: 2.2 rem;
     font-weight: 900;
     letter-spacing: -1.2px;
     display: flex;
@@ -107,8 +107,8 @@ html, body {
 #theme-toggle-btn, #view-history-btn, #update-btn, #refresh-btn {
     background: var(--surface);
     border: 1px solid var(--border);
-    width: 24px;
-    height: 24px;
+    width: 34px;
+    height: 34px;
     border-radius: 8px;
     display: flex;
     align-items: center;
