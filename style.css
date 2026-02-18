@@ -779,7 +779,7 @@ input:checked + .slider:before { transform: translateX(22px); }
 }
 
 .nav-tab .tab-icon {
-    font-size: 24px;
+    font-size: 14px;
     transition: transform 0.2s ease;
 }
 
